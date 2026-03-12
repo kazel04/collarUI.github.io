@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collar · AI Evaluation Harness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ─────────────────────────────────────────────
+   TOKENS
+───────────────────────────────────────────── */
+:root {
+  --ink:      #030609;
+  --s0:       #060b12;
+  --s1:       #0b1520;
+  --s2:       #111e2c;
+  --s3:       #182840;
+  --rim:      #1a3048;
+  --rim2:     #254d72;
+  --accent:   #3db8f5;
+  --accent2:  #0d6fa8;
+  --gold:     #e8a200;
+  --gold2:    #7a5100;
+  --jade:     #00c98c;
+  --jade2:    #006844;
+  --crimson:  #e63355;
+  --crim2:    #7a1028;
+  --violet:   #8b6cff;
+  --tx-a:     #b8d4e8;
+  --tx-b:     #4e7c9a;
+  --tx-c:     #254a62;
+  --font-h:   'Rajdhani', sans-serif;
+  --font-m:   'DM Mono', monospace;
+  --font-d:   'Bebas Neue', cursive;
+}
+
+/* ─────────────────────────────────────────────
+   RESET + BASE
+───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+
+body {
+  background: var(--ink);
+  color: var(--tx-a);
+  font-family: var(--font-m);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* ── Dot-grid background ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: radial-gradient(circle, rgba(61,184,245,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scan line sweep on load ── */
+body::after {
+  content: '';
+  position: fixed; left: 0; right: 0; top: -4px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(61,184,245,0.6), transparent);
+  animation: scanSweep 2.4s ease-out forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes scanSweep {
+  0%   { top: -4px; opacity: 1; }
+  85%  { top: 100vh; opacity: 0.6; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: var(--s0); }
+::-webkit-scrollbar-thumb { background: var(--rim2); }
+
+
+
+/* ─────────────────────────────────────────────
+   SIDEBAR
+───────────────────────────────────────────── */
+#sidebar {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: 224px;
+  background: var(--s0);
+  border-right: 1px solid var(--rim);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sb-brand {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--rim);
+  flex-shrink: 0;
+}
+
+.sb-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1) sepia(1) saturate(2) hue-rotate(175deg) brightness(1.2);
+  flex-shrink: 0;
+}
+
+.sb-wordmark {
+  font-family: var(--font-d);
+  font-size: 30px;
+  letter-spacing: 6px;
+  color: var(--accent);
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(61,184,245,0.35);
+}
+
+.sb-tagline {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 1.8px;
+  color: var(--tx-c);
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.sb-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 6px 8px;
+  background: rgba(0,201,140,0.06);
+  border: 1px solid rgba(0,201,140,0.15);
+}
+
+.sb-status-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 6px var(--jade);
+  animation: none;
+  flex-shrink: 0;
+}
+
+@keyframes blink { 0%,90%,100% { opacity: 1; } 95% { opacity: 0.2; } }
+
+.sb-status-text {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: var(--jade);
+  text-transform: uppercase;
+}
+
+/* Nav */
+.sb-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+
+.sb-section {
+  padding: 8px 20px 4px;
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: var(--tx-c);
+  text-transform: uppercase;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transition: transform 0.15s;
+}
+
+.nav-item:hover { background: rgba(61,184,245,0.04); }
+.nav-item:hover .nav-label { color: var(--tx-a); }
+
+.nav-item.active { background: rgba(61,184,245,0.07); }
+.nav-item.active::before { transform: scaleY(1); }
+.nav-item.active .nav-icon { color: var(--accent); }
+.nav-item.active .nav-label { color: var(--tx-a); }
+
+.nav-icon {
+  width: 16px; height: 16px;
+  color: var(--tx-c);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.nav-label {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  color: var(--tx-b);
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+
+.nav-badge {
+  margin-left: auto;
+  font-family: var(--font-m);
+  font-size: 8px;
+  padding: 1px 5px;
+  background: rgba(61,184,245,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(61,184,245,0.2);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.nav-badge.warn { background: rgba(232,162,0,0.1); color: var(--gold); border-color: rgba(232,162,0,0.2); }
+.nav-badge.alert { background: rgba(230,51,85,0.1); color: var(--crimson); border-color: rgba(230,51,85,0.2); }
+
+/* Sidebar footer */
+.sb-footer {
+  border-top: 1px solid var(--rim);
+  padding: 12px 16px;
+  flex-shrink: 0;
+}
+
+.sb-op {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-avatar {
+  width: 30px; height: 30px;
+  background: var(--s2);
+  border: 1px solid var(--rim2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-h);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+  clip-path: polygon(6px 0%, 100% 0%, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0% 100%, 0% 6px);
+}
+
+.sb-op-info { flex: 1; min-width: 0; }
+.sb-op-name { font-family: var(--font-h); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; color: var(--tx-a); text-transform: uppercase; }
+.sb-op-role { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); letter-spacing: 1px; margin-top: 1px; }
+
+/* ─────────────────────────────────────────────
+   TOPBAR
+───────────────────────────────────────────── */
+#topbar {
+  position: fixed;
+  top: 0; left: 224px; right: 0;
+  height: 52px;
+  background: var(--s0);
+  border-bottom: 1px solid var(--rim);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 24px;
+  z-index: 900;
+}
+
+.tb-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.tb-section {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--tx-c);
+  text-transform: uppercase;
+}
+
+.tb-sep { color: var(--tx-c); font-size: 10px; }
+
+.tb-page {
+  font-family: var(--font-h);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--tx-a);
+  text-transform: uppercase;
+}
+
+.tb-pills { display: flex; gap: 8px; align-items: center; }
+
+.tb-pill {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tb-pill.green { background: rgba(0,201,140,0.08); color: var(--jade); border: 1px solid rgba(0,201,140,0.2); }
+.tb-pill.amber { background: rgba(232,162,0,0.08); color: var(--gold); border: 1px solid rgba(232,162,0,0.2); }
+.tb-pill.blue  { background: rgba(61,184,245,0.08); color: var(--accent); border: 1px solid rgba(61,184,245,0.2); }
+
+.tb-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.tb-dot.green { background: var(--jade); box-shadow: 0 0 5px var(--jade); }
+.tb-dot.amber { background: var(--gold); }
+.tb-dot.blue  { background: var(--accent); }
+
+.tb-clock {
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--tx-b);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────
+   MAIN CONTENT
+───────────────────────────────────────────── */
+#main {
+  margin-left: 224px;
+  margin-top: 52px;
+  margin-bottom: 0;
+  padding: 28px;
+  min-height: calc(100vh - 52px);
+  position: relative;
+  z-index: 1;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE SYSTEM
+───────────────────────────────────────────── */
+.page { display: none; }
+.page.active { display: block; animation: pgIn 0.25s ease; }
+@keyframes pgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+/* ─────────────────────────────────────────────
+   PAGE HEADER
+───────────────────────────────────────────── */
+.ph {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rim);
+  position: relative;
+}
+
+/* Corner ticks on header */
+.ph::before, .ph::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  width: 8px; height: 8px;
+  border-bottom: 2px solid var(--accent);
+}
+.ph::before { left: 0; border-left: 2px solid var(--accent); }
+.ph::after  { right: 0; border-right: 2px solid var(--accent); }
+
+.ph-title {
+  font-family: var(--font-d);
+  font-size: 38px;
+  letter-spacing: 4px;
+  color: var(--tx-a);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.ph-title em { color: var(--accent); font-style: normal; }
+
+.ph-sub {
+  font-family: var(--font-m);
+  font-size: 10px;
+  color: var(--tx-c);
+  letter-spacing: 1.5px;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.ph-actions { display: flex; gap: 8px; }
+
+/* ─────────────────────────────────────────────
+   BUTTONS
+───────────────────────────────────────────── */
+.btn {
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  padding: 8px 18px;
+  border: 1px solid var(--rim2);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  clip-path: polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px);
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: rgba(61,184,245,0.08);
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgba(61,184,245,0.12);
+}
+
+.btn-primary { background: rgba(61,184,245,0.1); border-color: var(--accent); }
+
+.btn-gold { color: var(--gold); border-color: var(--gold2); }
+.btn-gold:hover { background: rgba(232,162,0,0.08); border-color: var(--gold); }
+
+.btn-red { color: var(--crimson); border-color: var(--crim2); }
+.btn-red:hover { background: rgba(230,51,85,0.08); border-color: var(--crimson); }
+
+.btn-jade { color: var(--jade); border-color: var(--jade2); }
+.btn-jade:hover { background: rgba(0,201,140,0.08); border-color: var(--jade); }
+
+/* ─────────────────────────────────────────────
+   CARDS / PANELS
+───────────────────────────────────────────── */
+.panel {
+  background: var(--s1);
+  border: 1px solid var(--rim);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Corner bracket decoration */
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 12px; height: 12px;
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.panel-inner { padding: 18px 20px; }
+
+.panel-title {
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  color: var(--tx-b);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--rim2), transparent);
+}
+
+/* ── Collapse button ── */
+.panel-collapse-btn {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 20px; height: 20px;
+  background: transparent;
+  border: 1px solid var(--rim);
+  color: var(--tx-c);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.panel-collapse-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(61,184,245,0.06);
+}
+
+.panel-collapse-btn svg {
+  width: 10px; height: 10px;
+  transition: transform 0.2s ease;
+  display: block;
+}
+
+.panel.collapsed .panel-collapse-btn svg {
+  transform: rotate(-90deg);
+}
+
+.panel-body {
+  transition: max-height 0.28s ease, opacity 0.22s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.panel.collapsed .panel-body {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ─────────────────────────────────────────────
+   KPI CARDS
+───────────────────────────────────────────── */
+.kpi-grid { display: grid; gap: 10px; }
+.kpi-5 { grid-template-columns: repeat(5, 1fr); }
+.kpi-4 { grid-template-columns: repeat(4, 1fr); }
+.kpi-3 { grid-template-columns: repeat(3, 1fr); }
+
+.kpi {
+  background: var(--s1);
+  border: 1px solid var(--rim);
+  padding: 16px 18px 14px;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+/* Accent line at bottom */
+.kpi::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+}
+
+.kpi.c-blue::after  { background: var(--accent); box-shadow: 0 0 8px rgba(61,184,245,0.5); }
+.kpi.c-jade::after  { background: var(--jade);   box-shadow: 0 0 8px rgba(0,201,140,0.4); }
+.kpi.c-gold::after  { background: var(--gold);   box-shadow: 0 0 8px rgba(232,162,0,0.4); }
+.kpi.c-red::after   { background: var(--crimson);}
+.kpi.c-violet::after{ background: var(--violet); }
+
+.kpi-label {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--tx-c);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: var(--font-d);
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.kpi.c-blue  .kpi-value  { color: var(--accent); }
+.kpi.c-jade  .kpi-value  { color: var(--jade);   }
+.kpi.c-gold  .kpi-value  { color: var(--gold);   }
+.kpi.c-red   .kpi-value  { color: var(--crimson);}
+.kpi.c-violet .kpi-value { color: var(--violet); }
+
+.kpi-delta {
+  font-family: var(--font-m);
+  font-size: 9px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kpi-delta.up   { color: var(--jade); }
+.kpi-delta.down { color: var(--crimson); }
+.kpi-delta.flat { color: var(--tx-c); }
+
+/* ─────────────────────────────────────────────
+   GRID LAYOUTS
+───────────────────────────────────────────── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+.g32 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.g23 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+.span2 { grid-column: span 2; }
+.span3 { grid-column: span 3; }
+.gap-sm { gap: 10px; }
+.mb { margin-bottom: 14px; }
+.mb2 { margin-bottom: 22px; }
+
+/* ─────────────────────────────────────────────
+   TABLE
+───────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; }
+
+.tbl thead tr {
+  border-bottom: 1px solid var(--rim2);
+}
+
+.tbl th {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--tx-c);
+  text-align: left;
+  padding: 8px 14px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.tbl td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(26,48,72,0.7);
+  font-family: var(--font-m);
+  font-size: 11px;
+  color: var(--tx-b);
+  vertical-align: middle;
+}
+
+.tbl tr:hover td { background: rgba(61,184,245,0.03); }
+.tbl-name { font-family: var(--font-h); font-size: 13px; font-weight: 600; color: var(--tx-a); }
+
+/* ─────────────────────────────────────────────
+   BADGES / TAGS
+───────────────────────────────────────────── */
+.tag {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  padding: 2px 7px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  clip-path: polygon(4px 0%,100% 0%,100% calc(100% - 4px),calc(100% - 4px) 100%,0% 100%,0% 4px);
+}
+
+.tag-blue   { background: rgba(61,184,245,0.1);  color: var(--accent);  border: 1px solid rgba(61,184,245,0.2); }
+.tag-jade   { background: rgba(0,201,140,0.08);  color: var(--jade);    border: 1px solid rgba(0,201,140,0.2); }
+.tag-gold   { background: rgba(232,162,0,0.08);  color: var(--gold);    border: 1px solid rgba(232,162,0,0.2); }
+.tag-red    { background: rgba(230,51,85,0.08);  color: var(--crimson); border: 1px solid rgba(230,51,85,0.2); }
+.tag-violet { background: rgba(139,108,255,0.1); color: var(--violet);  border: 1px solid rgba(139,108,255,0.2); }
+.tag-muted  { background: rgba(37,74,98,0.2);    color: var(--tx-c);    border: 1px solid var(--rim); }
+
+/* ─────────────────────────────────────────────
+   PROGRESS
+───────────────────────────────────────────── */
+.prog {
+  height: 3px;
+  background: var(--rim);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.prog-fill {
+  height: 100%;
+  transition: width 1s ease;
+}
+
+.prog-fill.blue   { background: var(--accent); box-shadow: 0 0 6px rgba(61,184,245,0.6); }
+.prog-fill.jade   { background: var(--jade);   box-shadow: 0 0 6px rgba(0,201,140,0.5); }
+.prog-fill.gold   { background: var(--gold);   box-shadow: 0 0 6px rgba(232,162,0,0.5); }
+.prog-fill.red    { background: var(--crimson);}
+
+/* ─────────────────────────────────────────────
+   TERMINAL / LOG
+───────────────────────────────────────────── */
+.terminal {
+  background: #020508;
+  border: 1px solid var(--rim);
+  border-top: 2px solid var(--accent2);
+  padding: 14px 16px;
+  font-family: var(--font-m);
+  font-size: 10.5px;
+  line-height: 1.9;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.terminal .t-ts  { color: var(--tx-c); }
+.terminal .t-ok  { color: var(--jade); }
+.terminal .t-inf { color: var(--accent); }
+.terminal .t-wrn { color: var(--gold); }
+.terminal .t-err { color: var(--crimson); }
+.terminal .t-dim { color: var(--tx-c); }
+
+/* ─────────────────────────────────────────────
+   FORM ELEMENTS
+───────────────────────────────────────────── */
+.fl { font-family: var(--font-m); font-size: 8px; letter-spacing: 2px; color: var(--tx-c); text-transform: uppercase; margin-bottom: 5px; }
+
+input[type=text], input[type=number], select, textarea {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  color: var(--tx-b);
+  font-family: var(--font-m);
+  font-size: 11px;
+  padding: 8px 11px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+  clip-path: polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px);
+}
+
+input[type=text]:focus, input[type=number]:focus, select:focus {
+  border-color: var(--accent2);
+  color: var(--tx-a);
+}
+
+select option { background: var(--s0); }
+
+.fg { margin-bottom: 12px; }
+
+.fr2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.fr3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+
+/* Toggle switch */
+.tog {
+  position: relative;
+  width: 36px; height: 18px;
+  display: inline-block;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.tog input { display: none; }
+
+.tog-track {
+  position: absolute;
+  inset: 0;
+  background: var(--rim);
+  clip-path: polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px);
+  transition: background 0.2s;
+}
+
+.tog input:checked + .tog-track { background: var(--accent2); }
+
+.tog-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 12px; height: 12px;
+  background: var(--tx-c);
+  transition: transform 0.2s, background 0.2s;
+  clip-path: polygon(2px 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%,0 2px);
+}
+
+.tog input:checked ~ .tog-thumb {
+  transform: translateX(18px);
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(61,184,245,0.5);
+}
+
+.tog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  margin-bottom: 6px;
+}
+
+.tog-info { flex: 1; margin-right: 12px; }
+.tog-name { font-family: var(--font-h); font-size: 12px; font-weight: 500; color: var(--tx-a); }
+.tog-desc { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); margin-top: 2px; letter-spacing: 0.5px; }
+
+/* Range */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--rim);
+  outline: none;
+  cursor: pointer;
+  clip-path: none;
+  border: none;
+  padding: 0;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px;
+  background: var(--accent);
+  clip-path: polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px);
+  box-shadow: 0 0 8px rgba(61,184,245,0.5);
+}
+
+/* ─────────────────────────────────────────────
+   TABS
+───────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--rim);
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 9px 18px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--tx-c);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+
+.tab-btn:hover { color: var(--tx-b); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; animation: pgIn 0.2s ease; }
+
+/* ─────────────────────────────────────────────
+   SECTION GROUP COLLAPSE
+───────────────────────────────────────────── */
+.sec {
+  font-family: var(--font-m);
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sec::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--rim2), transparent);
+}
+
+.sec-chevron {
+  width: 16px; height: 16px;
+  border: 1px solid var(--rim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  order: -1;
+}
+
+.sec:hover .sec-chevron {
+  border-color: var(--accent);
+  background: rgba(61,184,245,0.06);
+}
+
+.sec-chevron svg {
+  width: 8px; height: 8px;
+  transition: transform 0.2s ease;
+  display: block;
+}
+
+.sec-group.collapsed .sec-chevron svg {
+  transform: rotate(-90deg);
+}
+
+.sec-group.collapsed .sec-label-text {
+  color: var(--tx-c);
+}
+
+.sec-body {
+  overflow: hidden;
+  max-height: 3000px;
+  opacity: 1;
+  transition: max-height 0.3s ease, opacity 0.22s ease;
+}
+
+.sec-group.collapsed .sec-body {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* ─────────────────────────────────────────────
+   TIMELINE (Agentic)
+───────────────────────────────────────────── */
+.timeline { padding-left: 24px; position: relative; }
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 8px; bottom: 0;
+  width: 1px;
+  background: linear-gradient(var(--rim2), transparent);
+}
+
+.tl-item { position: relative; margin-bottom: 16px; }
+
+.tl-dot {
+  position: absolute;
+  left: -22px; top: 4px;
+  width: 8px; height: 8px;
+  clip-path: polygon(2px 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%,0 2px);
+}
+
+.tl-dot.tool    { background: var(--accent); }
+.tl-dot.decide  { background: var(--gold); }
+.tl-dot.ok      { background: var(--jade); }
+.tl-dot.err     { background: var(--crimson); }
+
+.tl-ts { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); margin-bottom: 4px; }
+
+.tl-card {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  border-left: 2px solid var(--rim2);
+  padding: 9px 12px;
+}
+
+.tl-card.tool   { border-left-color: var(--accent2); }
+.tl-card.decide { border-left-color: var(--gold2); }
+.tl-card.ok     { border-left-color: var(--jade2); }
+
+.tl-action {
+  font-family: var(--font-h);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--tx-a);
+  text-transform: uppercase;
+}
+
+.tl-detail { font-family: var(--font-m); font-size: 10px; color: var(--tx-c); margin-top: 2px; }
+
+/* ─────────────────────────────────────────────
+   NETWORK VIZ (DDIL)
+───────────────────────────────────────────── */
+.net-viz {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 16px 0;
+}
+
+.net-node {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  padding: 14px 20px;
+  text-align: center;
+  clip-path: polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  min-width: 100px;
+}
+
+.net-node-icon { font-size: 22px; margin-bottom: 6px; }
+.net-node-name { font-family: var(--font-h); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--tx-a); text-transform: uppercase; }
+.net-node-st   { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); margin-top: 3px; letter-spacing: 1px; }
+
+.net-pipe {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+.net-line {
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent2), var(--gold2));
+  position: relative;
+}
+
+.net-line::after {
+  content: '▶';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  font-size: 10px;
+  color: var(--accent2);
+  transform: translateX(-50%);
+  animation: flowArrow 1.5s linear infinite;
+}
+
+@keyframes flowArrow {
+  0%   { left: 20%; }
+  100% { left: 80%; }
+}
+
+.net-stats { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); letter-spacing: 1px; text-align: center; }
+
+/* ─────────────────────────────────────────────
+   ATTACK BARS (Adversarial)
+───────────────────────────────────────────── */
+.atk-item {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  border-left: 2px solid var(--crim2);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: border-left-color 0.15s;
+}
+
+.atk-item:hover { border-left-color: var(--crimson); }
+
+.atk-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+.atk-name {
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--tx-a);
+  text-transform: uppercase;
+}
+
+.atk-score {
+  font-family: var(--font-d);
+  font-size: 22px;
+}
+
+.atk-meta { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); margin-top: 5px; letter-spacing: 0.5px; }
+
+/* ─────────────────────────────────────────────
+   MODEL CARD GRID
+───────────────────────────────────────────── */
+.model-card {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  position: relative;
+  clip-path: polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);
+}
+
+.model-card:hover { border-color: var(--rim2); }
+.model-card.sel { border-color: var(--accent); background: rgba(61,184,245,0.04); }
+
+.model-card.sel::after {
+  content: '✓';
+  position: absolute;
+  top: 8px; right: 10px;
+  color: var(--accent);
+  font-size: 11px;
+  font-family: var(--font-m);
+}
+
+.mc-type { margin-bottom: 8px; }
+.mc-name { font-family: var(--font-h); font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--tx-a); text-transform: uppercase; margin-bottom: 3px; }
+.mc-meta { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); letter-spacing: 0.5px; }
+.mc-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 9px; }
+
+/* ─────────────────────────────────────────────
+   BENCH CARD
+───────────────────────────────────────────── */
+.bench {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+}
+
+.bench:hover { border-color: var(--rim2); }
+.bench-v  { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); letter-spacing: 1px; margin-bottom: 5px; }
+.bench-n  { font-family: var(--font-h); font-size: 14px; font-weight: 700; letter-spacing: 1px; color: var(--tx-a); text-transform: uppercase; margin-bottom: 4px; }
+.bench-d  { font-family: var(--font-m); font-size: 10px; color: var(--tx-c); line-height: 1.5; }
+.bench-tags { display: flex; gap: 4px; margin-top: 9px; flex-wrap: wrap; }
+
+/* ─────────────────────────────────────────────
+   GAUGE (SVG)
+───────────────────────────────────────────── */
+.gauge-wrap {
+  text-align: center;
+  padding: 14px;
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  clip-path: polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%);
+}
+
+.gauge-wrap svg { transform: rotate(-90deg); display: block; margin: 0 auto; }
+.gauge-bg  { fill: none; stroke: var(--rim); stroke-width: 7; }
+.gauge-fg  { fill: none; stroke-width: 7; stroke-linecap: butt; transition: stroke-dashoffset 1.2s ease; }
+.gauge-val { font-family: var(--font-d); font-size: 26px; }
+.gauge-lbl { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); letter-spacing: 1.5px; margin-top: 2px; }
+.gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* ─────────────────────────────────────────────
+   ACTIVITY FEED
+───────────────────────────────────────────── */
+.feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(26,48,72,0.6);
+  align-items: flex-start;
+}
+
+.feed-ts {
+  font-family: var(--font-m);
+  font-size: 9px;
+  color: var(--tx-c);
+  white-space: nowrap;
+  min-width: 54px;
+  margin-top: 1px;
+  letter-spacing: 0.5px;
+}
+
+.feed-body { font-family: var(--font-m); font-size: 10.5px; color: var(--tx-b); line-height: 1.5; flex: 1; }
+.feed-body b { color: var(--tx-a); font-weight: 500; }
+.feed-body .hi { color: var(--jade); }
+.feed-body .wa { color: var(--gold); }
+.feed-body .er { color: var(--crimson); }
+
+/* ─────────────────────────────────────────────
+   SYS MAP
+───────────────────────────────────────────── */
+.sysmap { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+.sm-node {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.sm-node:hover { border-color: var(--rim2); background: rgba(61,184,245,0.03); }
+
+.sm-ind {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+}
+
+.sm-ind.on  { background: var(--jade); box-shadow: 0 0 5px var(--jade); }
+.sm-ind.wrn { background: var(--gold); }
+.sm-ind.off { background: var(--tx-c); }
+
+.sm-icon { font-size: 18px; margin-bottom: 7px; }
+.sm-name { font-family: var(--font-h); font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--tx-a); text-transform: uppercase; }
+.sm-info { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); margin-top: 3px; letter-spacing: 0.5px; }
+
+/* ─────────────────────────────────────────────
+   API ENDPOINTS
+───────────────────────────────────────────── */
+.ep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--rim);
+  background: var(--s0);
+  margin-bottom: 5px;
+  transition: border-color 0.15s;
+}
+.ep:hover { border-color: var(--rim2); }
+.ep-m  { font-family: var(--font-m); font-size: 8px; font-weight: 500; padding: 2px 6px; letter-spacing: 1px; min-width: 36px; text-align: center; }
+.ep-m.post { background: rgba(61,184,245,0.12); color: var(--accent); }
+.ep-m.get  { background: rgba(0,201,140,0.1);  color: var(--jade);   }
+.ep-m.del  { background: rgba(230,51,85,0.1);  color: var(--crimson);}
+.ep-path   { font-family: var(--font-m); font-size: 10.5px; color: var(--tx-b); flex: 1; }
+.ep-desc   { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); }
+
+/* ─────────────────────────────────────────────
+   EXPORT TILES
+───────────────────────────────────────────── */
+.exp-tile {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  clip-path: polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%);
+}
+.exp-tile:hover { border-color: var(--accent); background: rgba(61,184,245,0.04); }
+.exp-icon { font-size: 26px; margin-bottom: 8px; }
+.exp-name { font-family: var(--font-h); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--tx-a); text-transform: uppercase; }
+.exp-desc { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); margin-top: 3px; letter-spacing: 0.5px; }
+
+/* ─────────────────────────────────────────────
+   SCENARIO CARD
+───────────────────────────────────────────── */
+.scenario {
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  border-left: 2px solid var(--rim2);
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scenario:hover { border-left-color: var(--gold2); }
+.scenario.active { border-left-color: var(--gold); background: rgba(232,162,0,0.03); }
+.sc-title { font-family: var(--font-h); font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--tx-a); text-transform: uppercase; }
+.sc-id    { font-family: var(--font-m); font-size: 8px; color: var(--tx-c); margin-top: 2px; letter-spacing: 1px; }
+
+/* ─────────────────────────────────────────────
+   WORKLOAD BARS
+───────────────────────────────────────────── */
+.wl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.wl-lbl { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); width: 110px; flex-shrink: 0; letter-spacing: 0.5px; }
+.wl-bar { flex: 1; height: 5px; background: var(--rim); overflow: hidden; }
+.wl-fill { height: 100%; transition: width 0.8s ease; }
+.wl-val { font-family: var(--font-m); font-size: 10px; width: 32px; text-align: right; flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────
+   UPLOAD ZONE
+───────────────────────────────────────────── */
+.upload {
+  border: 1px dashed var(--rim2);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: rgba(61,184,245,0.01);
+}
+.upload:hover { border-color: var(--accent); background: rgba(61,184,245,0.04); }
+.upload-icon { font-size: 28px; margin-bottom: 10px; opacity: 0.5; }
+.upload-lbl  { font-family: var(--font-h); font-size: 13px; font-weight: 600; letter-spacing: 1.5px; color: var(--tx-b); text-transform: uppercase; }
+.upload-sub  { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); margin-top: 5px; letter-spacing: 0.5px; }
+
+/* ─────────────────────────────────────────────
+   DDIL CONTROLS
+───────────────────────────────────────────── */
+.sim-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rim);
+}
+.sim-lbl { font-family: var(--font-h); font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--tx-b); text-transform: uppercase; width: 140px; flex-shrink: 0; }
+.sim-rng { flex: 1; }
+.sim-val { font-family: var(--font-d); font-size: 20px; color: var(--accent); min-width: 70px; text-align: right; flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────
+   WATERMARK
+───────────────────────────────────────────── */
+#main::before {
+  content: '';
+  position: fixed;
+  top: 50%; left: 55%;
+  transform: translate(-50%,-50%) rotate(-25deg);
+  font-family: var(--font-d);
+  font-size: 120px;
+  letter-spacing: 20px;
+  color: rgba(61,184,245,0.018);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+  user-select: none;
+}
+
+/* ─────────────────────────────────────────────
+   CHART CONTAINER
+───────────────────────────────────────────── */
+.chart-box { position: relative; width: 100%; }
+
+/* ─────────────────────────────────────────────
+   MM TYPE BUTTONS
+───────────────────────────────────────────── */
+.mm-btn {
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  padding: 8px 14px;
+  background: var(--s0);
+  border: 1px solid var(--rim);
+  color: var(--tx-c);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  clip-path: polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px);
+}
+.mm-btn:hover, .mm-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(61,184,245,0.06); }
+
+/* ─────────────────────────────────────────────
+   SPARKLINE ROWS (monitoring)
+───────────────────────────────────────────── */
+.spark-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(26,48,72,0.5); }
+.spark-lbl { font-family: var(--font-m); font-size: 9px; color: var(--tx-c); width: 110px; flex-shrink: 0; letter-spacing: 0.5px; }
+.spark-c   { flex: 1; height: 28px; }
+.spark-val { font-family: var(--font-d); font-size: 20px; color: var(--accent); min-width: 56px; text-align: right; flex-shrink: 0; }
+.spark-d   { font-family: var(--font-m); font-size: 9px; min-width: 40px; text-align: right; flex-shrink: 0; }
+.spark-d.up  { color: var(--jade); }
+.spark-d.dn  { color: var(--crimson); }
+
+</style>
+</head>
+<body>
+
+
+
+<!-- ═════════════════════════════════════════
+     SIDEBAR
+═════════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo-wrap">
+      <img src="data:image/jpeg;base64,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" alt="Collar" class="sb-logo-img">
+      <div class="sb-wordmark">Collar</div>
+    </div>
+    <div class="sb-tagline">AI Performance Evaluation Harness</div>
+    <div class="sb-status">
+      <div class="sb-status-dot"></div>
+      <div class="sb-status-text">All systems operational</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <button class="nav-item active" onclick="nav('dashboard',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="9" width="6" height="6" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="9" width="6" height="6" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Command Dashboard</span>
+      <span class="nav-badge">LIVE</span>
+    </button>
+
+    <div class="sb-section" style="margin-top:6px;">Core Infrastructure</div>
+    <button class="nav-item" onclick="nav('model-iface',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Model Interface</span>
+      <span class="nav-badge">24</span>
+    </button>
+    <button class="nav-item" onclick="nav('execution',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 3h10v10H3z" stroke="currentColor" stroke-width="1.2"/><path d="M6 6l4 2-4 2V6z" fill="currentColor"/></svg>
+      <span class="nav-label">Execution Engine</span>
+      <span class="nav-badge warn">3</span>
+    </button>
+    <button class="nav-item" onclick="nav('scoring',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 12l3-4 3 2 3-5 3 3" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="14" x2="14" y2="14" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Scoring System</span>
+    </button>
+
+    <div class="sb-section" style="margin-top:6px;">Evaluation</div>
+    <button class="nav-item" onclick="nav('human-eval',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Human Evaluation</span>
+      <span class="nav-badge warn">34</span>
+    </button>
+    <button class="nav-item" onclick="nav('agentic',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.2"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.2"/><path d="M11.5 9v3M11.5 14v.5M9 11.5h3" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Agentic Evaluation</span>
+    </button>
+    <button class="nav-item" onclick="nav('adversarial',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 4h4l-3.3 2.4 1.3 4L8 10 4.5 12.4l1.3-4L2.5 6h4z" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Adversarial AI</span>
+      <span class="nav-badge alert">1</span>
+    </button>
+    <button class="nav-item" onclick="nav('multimodal',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="9" height="7" stroke="currentColor" stroke-width="1.2"/><path d="M10 6.5l5-2.5v7l-5-2.5" stroke="currentColor" stroke-width="1.2"/><line x1="1" y1="12" x2="10" y2="12" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Multimodal</span>
+    </button>
+
+    <div class="sb-section" style="margin-top:6px;">Management</div>
+    <button class="nav-item" onclick="nav('reporting',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M3 1h8l4 4v10H3z" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="10" x2="11" y2="10" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Reporting &amp; Output</span>
+    </button>
+    <button class="nav-item" onclick="nav('monitoring',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Monitoring</span>
+    </button>
+    <button class="nav-item" onclick="nav('benchmarks',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V6l4-4h8v12H2z" stroke="currentColor" stroke-width="1.2"/><line x1="6" y1="2" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="2" y1="6" x2="6" y2="6" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span class="nav-label">Benchmarks</span>
+    </button>
+    <button class="nav-item" onclick="nav('ddil',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M1 11 Q4 5 8 8 Q12 11 15 5" stroke="currentColor" stroke-width="1.2" fill="none"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>
+      <span class="nav-label">DDIL Simulator</span>
+    </button>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sb-op">
+      <div class="sb-avatar">JM</div>
+      <div class="sb-op-info">
+        <div class="sb-op-name">J. Morrison</div>
+        <div class="sb-op-role">SGT-7 · ADMIN</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═════════════════════════════════════════
+     TOPBAR
+═════════════════════════════════════════ -->
+<header id="topbar">
+  <div class="tb-breadcrumb">
+    <span class="tb-section">Collar</span>
+    <span class="tb-sep">›</span>
+    <span class="tb-page" id="tb-page-label">Command Dashboard</span>
+  </div>
+  <div class="tb-pills">
+    <div class="tb-pill green"><div class="tb-dot green"></div>SYSTEM NOMINAL</div>
+    <div class="tb-pill amber"><div class="tb-dot amber"></div>3 WORKFLOWS ACTIVE</div>
+    <div class="tb-pill blue"><div class="tb-dot blue"></div>1 RED TEAM RUNNING</div>
+  </div>
+  <div class="tb-clock" id="topbar-clock">ZULU ──:──:──</div>
+</header>
+
+<!-- ═════════════════════════════════════════
+     MAIN
+═════════════════════════════════════════ -->
+<main id="main">
+
+<!-- ── DASHBOARD ── -->
+<div class="page active" id="page-dashboard">
+  <div class="ph">
+    <div>
+      <div class="ph-title">Command <em>Dashboard</em></div>
+      <div class="ph-sub">Integrated AI Evaluation Harness · System Overview</div>
+    </div>
+    <div class="ph-actions">
+      <button class="btn btn-gold" onclick="alert('Initiating full evaluation run...')">▶ Run Full Evaluation</button>
+      <button class="btn" onclick="alert('Generating status report...')">↓ Export Report</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid kpi-5 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Total Evaluations</div><div class="kpi-value">4812</div><div class="kpi-delta up">▲ 12.4% this week</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Models Registered</div><div class="kpi-value">24</div><div class="kpi-delta up">▲ 3 new this cycle</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Avg Benchmark Score</div><div class="kpi-value">82.3%</div><div class="kpi-delta up">▲ 2.1 pts vs baseline</div></div>
+    <div class="kpi c-violet"><div class="kpi-label">Active Benchmarks</div><div class="kpi-value">47</div><div class="kpi-delta up">▲ 5 added this month</div></div>
+    <div class="kpi c-red"><div class="kpi-label">Adversarial Blocked</div><div class="kpi-value">96.1%</div><div class="kpi-delta down">▼ 0.3 pts vs baseline</div></div>
+  </div>
+
+  <div class="g2 mb">
+    <!-- System map -->
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="panel-title">Architecture Map</div>
+        <div class="sysmap">
+          <div class="sm-node" onclick="nav('model-iface',null)"><div class="sm-ind on"></div><div class="sm-icon">⬡</div><div class="sm-name">Model Interface</div><div class="sm-info">24 adapters · REST / gRPC / SDK</div></div>
+          <div class="sm-node" onclick="nav('execution',null)"><div class="sm-ind on"></div><div class="sm-icon">◈</div><div class="sm-name">Execution Engine</div><div class="sm-info">3 workflows active</div></div>
+          <div class="sm-node" onclick="nav('scoring',null)"><div class="sm-ind on"></div><div class="sm-icon">◎</div><div class="sm-name">Scoring System</div><div class="sm-info">47 metrics loaded</div></div>
+          <div class="sm-node" onclick="nav('human-eval',null)"><div class="sm-ind on"></div><div class="sm-icon">◉</div><div class="sm-name">Human Eval</div><div class="sm-info">8 reviewers · κ=0.81</div></div>
+          <div class="sm-node" onclick="nav('reporting',null)"><div class="sm-ind on"></div><div class="sm-icon">▣</div><div class="sm-name">Reporting</div><div class="sm-info">API v2.4 · mTLS active</div></div>
+          <div class="sm-node" onclick="nav('monitoring',null)"><div class="sm-ind on"></div><div class="sm-icon">◌</div><div class="sm-name">Monitoring</div><div class="sm-info">Auto-ingest enabled</div></div>
+          <div class="sm-node" onclick="nav('benchmarks',null)"><div class="sm-ind on"></div><div class="sm-icon">▤</div><div class="sm-name">Benchmarks</div><div class="sm-info">v3.1.2 · 47 validated</div></div>
+          <div class="sm-node" onclick="nav('ddil',null)"><div class="sm-ind wrn"></div><div class="sm-icon">▵</div><div class="sm-name">DDIL Simulator</div><div class="sm-info">Standby · 3 profiles</div></div>
+          <div class="sm-node" onclick="nav('agentic',null)"><div class="sm-ind on"></div><div class="sm-icon">◫</div><div class="sm-name">Agentic Eval</div><div class="sm-info">Sandbox isolated</div></div>
+          <div class="sm-node" onclick="nav('adversarial',null)"><div class="sm-ind on"></div><div class="sm-icon">◈</div><div class="sm-name">Adversarial AI</div><div class="sm-info">1 campaign running</div></div>
+          <div class="sm-node" onclick="nav('multimodal',null)"><div class="sm-ind on"></div><div class="sm-icon">◰</div><div class="sm-name">Multimodal</div><div class="sm-info">V/A/X pipelines ready</div></div>
+          <div class="sm-node"><div class="sm-ind on"></div><div class="sm-icon">⬡</div><div class="sm-name">Access Control</div><div class="sm-info">CAC/PKI auth · RBAC</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity feed -->
+    <div class="panel">
+      <div class="panel-inner">
+        <div class="panel-title">Live Activity Feed</div>
+        <div>
+          <div class="feed-item"><div class="feed-ts">14:32:01</div><div class="feed-body"><b>GPT-4o</b> completed <b>MMLU-Pro</b> — Score: <span class="hi">88.4%</span></div></div>
+          <div class="feed-item"><div class="feed-ts">14:31:47</div><div class="feed-body">Campaign <b>RED-009</b> launched against <b>Llama-3.1</b> — <span class="wa">1,241 probes queued</span></div></div>
+          <div class="feed-item"><div class="feed-ts">14:30:22</div><div class="feed-body">SME-4 submitted workload rating for <b>TRIAGE-07</b></div></div>
+          <div class="feed-item"><div class="feed-ts">14:28:55</div><div class="feed-body">DDIL sim <b>BLACKOUT-3</b> completed — <span class="wa">2,400ms induced latency</span></div></div>
+          <div class="feed-item"><div class="feed-ts">14:27:11</div><div class="feed-body"><b>Mistral-Large-2</b> registered via REST adapter</div></div>
+          <div class="feed-item"><div class="feed-ts">14:25:03</div><div class="feed-body">Benchmark <b>CYBER-AWARE-v2</b> validated — deployed to production</div></div>
+          <div class="feed-item"><div class="feed-ts">14:23:44</div><div class="feed-body">Agentic task <b>TASK-882</b> complete — <span class="hi">14 tools · 0 errors · 91.2%</span></div></div>
+          <div class="feed-item"><div class="feed-ts">14:21:17</div><div class="feed-body">Export <b>RPT-2024-Q1</b> generated — JSON / CSV / SARIF</div></div>
+          <div class="feed-item"><div class="feed-ts">14:19:04</div><div class="feed-body"><span class="wa">DRIFT ALERT:</span> Mistral-Large CYBER-AWARE dropped 2.4 pts below threshold</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="panel"><div class="panel-inner"><div class="panel-title">Evaluation Volume — 30 Days</div><div class="chart-box" style="height:200px"><canvas id="ch-vol"></canvas></div></div></div>
+    <div class="panel"><div class="panel-inner"><div class="panel-title">Benchmark Scores by Model</div><div class="chart-box" style="height:200px"><canvas id="ch-bench"></canvas></div></div></div>
+  </div>
+</div>
+
+<!-- ── MODEL INTERFACE ── -->
+<div class="page" id="page-model-iface">
+  <div class="ph">
+    <div><div class="ph-title">Model <em>Interface</em></div><div class="ph-sub">Pluggable adapter architecture · REST · gRPC · SDK · Local · Air-Gapped</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Launching model registration wizard...')">+ Register Model</button>
+      <button class="btn" onclick="alert('Testing all adapter connections...')">⚡ Test All</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-3 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Registered Models</div><div class="kpi-value">24</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Adapter Types</div><div class="kpi-value">6</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Online / Healthy</div><div class="kpi-value">21 / 24</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Registered Adapters</div>
+      <div class="g2 mb">
+        <div class="model-card sel" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-blue">REST API</span></div><div class="mc-name">GPT-4o</div><div class="mc-meta">OpenAI · v2024-08-06</div><div class="mc-tags"><span class="tag tag-jade">ONLINE</span><span class="tag tag-muted">TEXT</span><span class="tag tag-muted">VISION</span></div></div>
+        <div class="model-card sel" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-gold">SDK</span></div><div class="mc-name">Claude 3.5</div><div class="mc-meta">Anthropic · Sonnet</div><div class="mc-tags"><span class="tag tag-jade">ONLINE</span><span class="tag tag-muted">TEXT</span><span class="tag tag-muted">VISION</span></div></div>
+        <div class="model-card" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-violet">LOCAL</span></div><div class="mc-name">Llama-3.1</div><div class="mc-meta">Meta · 70B-Instruct</div><div class="mc-tags"><span class="tag tag-jade">ONLINE</span><span class="tag tag-muted">TEXT</span></div></div>
+        <div class="model-card" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-blue">REST API</span></div><div class="mc-name">Gemini Pro</div><div class="mc-meta">Google · 1.5 Flash</div><div class="mc-tags"><span class="tag tag-jade">ONLINE</span><span class="tag tag-muted">MULTIMODAL</span></div></div>
+        <div class="model-card" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-jade">gRPC</span></div><div class="mc-name">Mistral</div><div class="mc-meta">MistralAI · Large-2</div><div class="mc-tags"><span class="tag tag-gold">DEGRADED</span><span class="tag tag-muted">TEXT</span></div></div>
+        <div class="model-card" onclick="this.classList.toggle('sel')"><div class="mc-type"><span class="tag tag-red">AIR-GAPPED</span></div><div class="mc-name">Internal-7B</div><div class="mc-meta">Internal · v1.2.0</div><div class="mc-tags"><span class="tag tag-jade">ONLINE</span><span class="tag tag-red">ISOLATED</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Adapter Configuration</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div class="fr2">
+          <div class="fg"><div class="fl">Base URL</div><input type="text" value="https://api.openai.com/v1"></div>
+          <div class="fg"><div class="fl">Auth Type</div><select><option>Bearer Token</option><option>API Key</option><option>OAuth 2.0</option></select></div>
+        </div>
+        <div class="fr2">
+          <div class="fg"><div class="fl">Timeout (ms)</div><input type="number" value="30000"></div>
+          <div class="fg"><div class="fl">Max Retries</div><input type="number" value="3"></div>
+        </div>
+        <div class="fr2">
+          <div class="fg"><div class="fl">Rate Limit (req/min)</div><input type="number" value="60"></div>
+          <div class="fg"><div class="fl">Data Sensitivity</div><select><option>Public</option><option>Internal</option><option>Controlled</option><option selected>Restricted</option></select></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="alert('Adapter saved and connection tested.')">Save &amp; Test Connection</button>
+      </div></div>
+      <div class="sec">API Reference</div>
+      <div class="ep"><span class="ep-m post">POST</span><span class="ep-path">/v1/models/{id}/invoke</span><span class="ep-desc">Execute inference</span></div>
+      <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/v1/models</span><span class="ep-desc">List registered models</span></div>
+      <div class="ep"><span class="ep-m post">POST</span><span class="ep-path">/v1/models/register</span><span class="ep-desc">Register new adapter</span></div>
+      <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/v1/models/{id}/health</span><span class="ep-desc">Health check</span></div>
+      <div class="ep"><span class="ep-m del">DEL</span><span class="ep-path">/v1/models/{id}</span><span class="ep-desc">Deregister model</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EXECUTION ── -->
+<div class="page" id="page-execution">
+  <div class="ph">
+    <div><div class="ph-title">Execution <em>Engine</em></div><div class="ph-sub">Workflow orchestration · Reproducible · Containerized · Multi-environment</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Creating new workflow...')">+ New Workflow</button>
+      <button class="btn btn-gold" onclick="alert('Scheduling batch run...')">⏱ Schedule Batch</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Active Workflows</div><div class="kpi-value">3</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Queued Tasks</div><div class="kpi-value">127</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Completed Today</div><div class="kpi-value">2,441</div></div>
+    <div class="kpi c-red"><div class="kpi-label">Failed</div><div class="kpi-value">12</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Active Workflows</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner" style="padding:0;">
+        <table class="tbl">
+          <thead><tr><th>Workflow ID</th><th>Models</th><th>Progress</th><th>Status</th><th>ETA</th></tr></thead>
+          <tbody>
+            <tr><td class="tbl-name">WF-0312-001</td><td><span class="tag tag-blue">4 models</span></td><td style="min-width:140px;"><div style="display:flex;align-items:center;gap:8px;"><div class="prog" style="flex:1;margin:0;"><div class="prog-fill blue" style="width:72%"></div></div><span style="font-family:var(--font-m);font-size:9px;color:var(--accent)">72%</span></div></td><td><span class="tag tag-jade">RUNNING</span></td><td style="font-family:var(--font-m);font-size:10px;">~14 min</td></tr>
+            <tr><td class="tbl-name">WF-0312-002</td><td><span class="tag tag-blue">2 models</span></td><td><div style="display:flex;align-items:center;gap:8px;"><div class="prog" style="flex:1;margin:0;"><div class="prog-fill gold" style="width:38%"></div></div><span style="font-family:var(--font-m);font-size:9px;color:var(--gold)">38%</span></div></td><td><span class="tag tag-jade">RUNNING</span></td><td style="font-family:var(--font-m);font-size:10px;">~31 min</td></tr>
+            <tr><td class="tbl-name">WF-0312-003</td><td><span class="tag tag-blue">7 models</span></td><td><div style="display:flex;align-items:center;gap:8px;"><div class="prog" style="flex:1;margin:0;"><div class="prog-fill blue" style="width:9%"></div></div><span style="font-family:var(--font-m);font-size:9px;color:var(--accent)">9%</span></div></td><td><span class="tag tag-gold">STARTING</span></td><td style="font-family:var(--font-m);font-size:10px;">~2.1 hr</td></tr>
+            <tr><td class="tbl-name" style="color:var(--tx-c)">WF-0311-019</td><td><span class="tag tag-muted">3 models</span></td><td><div style="display:flex;align-items:center;gap:8px;"><div class="prog" style="flex:1;margin:0;"><div class="prog-fill jade" style="width:100%"></div></div><span style="font-family:var(--font-m);font-size:9px;color:var(--jade)">100%</span></div></td><td><span class="tag tag-muted">COMPLETE</span></td><td style="font-family:var(--font-m);font-size:10px;">Done</td></tr>
+            <tr><td class="tbl-name" style="color:var(--tx-c)">WF-0311-018</td><td><span class="tag tag-muted">2 models</span></td><td><div style="display:flex;align-items:center;gap:8px;"><div class="prog" style="flex:1;margin:0;"><div class="prog-fill red" style="width:55%"></div></div><span style="font-family:var(--font-m);font-size:9px;color:var(--crimson)">55%</span></div></td><td><span class="tag tag-red">FAILED</span></td><td style="font-family:var(--font-m);font-size:10px;">—</td></tr>
+          </tbody>
+        </table>
+      </div></div>
+      <div class="sec">Execution Log</div>
+      <div class="terminal">
+        <div><span class="t-ts">[14:32:01Z]</span> <span class="t-inf">WF-001</span> Task 288/400 dispatched → GPT-4o · MMLU-Pro · batch_12</div>
+        <div><span class="t-ts">[14:31:59Z]</span> <span class="t-ok">WF-001</span> Task 287 complete ✓ · 842ms</div>
+        <div><span class="t-ts">[14:31:55Z]</span> <span class="t-inf">WF-002</span> Task 76/200 dispatched → Claude-3.5 · HumanEval · batch_04</div>
+        <div><span class="t-ts">[14:31:47Z]</span> <span class="t-wrn">WF-003</span> Container provisioned: apex-worker-0312-7f3c</div>
+        <div><span class="t-ts">[14:31:44Z]</span> <span class="t-wrn">WF-003</span> Pulling config: CYBER-AWARE-v2 + MMLU-Pro + TruthfulQA</div>
+        <div><span class="t-ts">[14:31:40Z]</span> <span class="t-ok">SCHED</span> WF-003 queued — 7 model × 3 benchmark matrix</div>
+        <div><span class="t-ts">[14:31:22Z]</span> <span class="t-err">WF-018</span> FAILED: model timeout 30000ms — adapter: mistral-large-2</div>
+        <div><span class="t-ts">[14:31:18Z]</span> <span class="t-dim">SYS</span> Health check: 21/24 adapters responding</div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Workflow Configuration</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div class="fr2">
+          <div class="fg"><div class="fl">Workflow Name</div><input type="text" value="Q1-2024-Full-Suite"></div>
+          <div class="fg"><div class="fl">Parallelism</div><select><option>Auto</option><option>4 workers</option><option>8 workers</option><option>16 workers</option></select></div>
+        </div>
+        <div class="fr2">
+          <div class="fg"><div class="fl">Execution Mode</div><select><option>Sequential</option><option>Parallel</option><option>Hybrid</option></select></div>
+          <div class="fg"><div class="fl">Retry Policy</div><select><option>3× Exponential</option><option>No Retry</option><option>3× Fixed</option></select></div>
+        </div>
+        <div class="fg"><div class="fl">Deployment Environment</div><select><option>Cloud (Public)</option><option>Cloud (Private)</option><option>Air-Gapped (IL6)</option><option>On-Premise</option></select></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Containerized (Docker / K8s)</div><div class="tog-desc">OCI-compliant images, gov orchestration platforms</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Reproducible Seed Locking</div><div class="tog-desc">Deterministic execution across environments</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row" style="margin-bottom:14px;"><div class="tog-info"><div class="tog-name">Human Eval Integration</div><div class="tog-desc">Trigger SME review queue on workflow completion</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="alert('Workflow queued for execution.')">▶ Queue Workflow</button>
+      </div></div>
+      <div class="sec">Resource Utilization</div>
+      <div class="panel"><div class="panel-inner"><div class="chart-box" style="height:140px;"><canvas id="ch-res"></canvas></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCORING ── -->
+<div class="page" id="page-scoring">
+  <div class="ph">
+    <div><div class="ph-title">Measurement &amp; <em>Scoring</em></div><div class="ph-sub">Multi-metric automated scoring · LLM-as-Judge · Human correlation · Weighted composite</div></div>
+    <div class="ph-actions">
+      <button class="btn" onclick="alert('Exporting scoring results...')">↓ Export Results</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="tab('sc','overview',this)">Overview</button>
+    <button class="tab-btn" onclick="tab('sc','results',this)">Detailed Results</button>
+    <button class="tab-btn" onclick="tab('sc','metrics',this)">Metric Config</button>
+  </div>
+
+  <div class="tab-pane active" id="sc-overview">
+    <div class="g4 mb">
+      <div class="gauge-wrap" style="position:relative;">
+        <svg viewBox="0 0 100 100" width="100" height="100"><circle class="gauge-bg" cx="50" cy="50" r="42"/><circle class="gauge-fg" cx="50" cy="50" r="42" stroke="#3db8f5" stroke-dasharray="264" stroke-dashoffset="46"/></svg>
+        <div class="gauge-center"><div class="gauge-val" style="color:var(--accent)">82.3</div><div class="gauge-lbl">OVERALL</div></div>
+      </div>
+      <div class="gauge-wrap" style="position:relative;">
+        <svg viewBox="0 0 100 100" width="100" height="100"><circle class="gauge-bg" cx="50" cy="50" r="42"/><circle class="gauge-fg" cx="50" cy="50" r="42" stroke="#00c98c" stroke-dasharray="264" stroke-dashoffset="31"/></svg>
+        <div class="gauge-center"><div class="gauge-val" style="color:var(--jade)">88.2</div><div class="gauge-lbl">ACCURACY</div></div>
+      </div>
+      <div class="gauge-wrap" style="position:relative;">
+        <svg viewBox="0 0 100 100" width="100" height="100"><circle class="gauge-bg" cx="50" cy="50" r="42"/><circle class="gauge-fg" cx="50" cy="50" r="42" stroke="#e8a200" stroke-dasharray="264" stroke-dashoffset="63"/></svg>
+        <div class="gauge-center"><div class="gauge-val" style="color:var(--gold)">76.1</div><div class="gauge-lbl">SAFETY</div></div>
+      </div>
+      <div class="gauge-wrap" style="position:relative;">
+        <svg viewBox="0 0 100 100" width="100" height="100"><circle class="gauge-bg" cx="50" cy="50" r="42"/><circle class="gauge-fg" cx="50" cy="50" r="42" stroke="#8b6cff" stroke-dasharray="264" stroke-dashoffset="37"/></svg>
+        <div class="gauge-center"><div class="gauge-val" style="color:var(--violet)">85.7</div><div class="gauge-lbl">REASONING</div></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="panel"><div class="panel-inner"><div class="panel-title">Model Capability Radar</div><div class="chart-box" style="height:240px;"><canvas id="ch-radar"></canvas></div></div></div>
+      <div class="panel"><div class="panel-inner"><div class="panel-title">Score Distribution</div><div class="chart-box" style="height:240px;"><canvas id="ch-scatter"></canvas></div></div></div>
+    </div>
+  </div>
+
+  <div class="tab-pane" id="sc-results">
+    <div class="panel"><div class="panel-inner" style="padding:0;">
+      <table class="tbl">
+        <thead><tr><th>Model</th><th>Benchmark</th><th>Score</th><th>Δ Baseline</th><th>Rank</th><th>Scorer</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td class="tbl-name">GPT-4o</td><td>MMLU-Pro</td><td style="color:var(--jade);font-family:var(--font-m);">88.4%</td><td style="color:var(--jade);font-family:var(--font-m);">+3.2</td><td>#1</td><td><span class="tag tag-blue">AUTO</span></td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+          <tr><td class="tbl-name">Claude-3.5</td><td>MMLU-Pro</td><td style="color:var(--jade);font-family:var(--font-m);">87.1%</td><td style="color:var(--jade);font-family:var(--font-m);">+1.9</td><td>#2</td><td><span class="tag tag-blue">AUTO</span></td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+          <tr><td class="tbl-name">Llama-3.1</td><td>MMLU-Pro</td><td style="color:var(--gold);font-family:var(--font-m);">78.2%</td><td style="color:var(--tx-c);font-family:var(--font-m);">-0.4</td><td>#4</td><td><span class="tag tag-blue">AUTO</span></td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+          <tr><td class="tbl-name">GPT-4o</td><td>HumanEval</td><td style="color:var(--jade);font-family:var(--font-m);">90.2%</td><td style="color:var(--jade);font-family:var(--font-m);">+5.1</td><td>#1</td><td><span class="tag tag-gold">HUMAN+AUTO</span></td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+          <tr><td class="tbl-name">Mistral</td><td>CYBER-AWARE</td><td style="color:var(--gold);font-family:var(--font-m);">71.3%</td><td style="color:var(--crimson);font-family:var(--font-m);">-2.4</td><td>#5</td><td><span class="tag tag-gold">HUMAN+AUTO</span></td><td><span class="tag tag-gold">IN REVIEW</span></td></tr>
+          <tr><td class="tbl-name">Internal-7B</td><td>MISSION-SIM</td><td style="color:var(--crimson);font-family:var(--font-m);">62.1%</td><td style="color:var(--crimson);font-family:var(--font-m);">-8.2</td><td>#9</td><td><span class="tag tag-violet">SME ONLY</span></td><td><span class="tag tag-gold">IN REVIEW</span></td></tr>
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <div class="tab-pane" id="sc-metrics">
+    <div class="g2">
+      <div class="panel"><div class="panel-inner">
+        <div class="panel-title">Active Metrics</div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Exact Match Accuracy</div><div class="tog-desc">weight: 0.30</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">ROUGE-L F1</div><div class="tog-desc">weight: 0.15</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">BERTScore</div><div class="tog-desc">weight: 0.20</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">LLM-as-Judge</div><div class="tog-desc">weight: 0.25</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Human Correlation</div><div class="tog-desc">weight: 0.10</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+      </div></div>
+      <div class="panel"><div class="panel-inner">
+        <div class="panel-title">Scoring Configuration</div>
+        <div class="fg"><div class="fl">Scoring Strategy</div><select><option>Weighted Composite</option><option>Pareto Optimal</option><option>Min-Max Normalized</option></select></div>
+        <div class="fg"><div class="fl">Reference Dataset</div><select><option>MMLU-Pro v2024.1</option><option>HumanEval v1.0</option><option>TruthfulQA v0.3</option></select></div>
+        <div class="fg"><div class="fl">Null Response Penalty</div><input type="number" value="0"></div>
+        <div class="tog-row" style="margin-bottom:14px;"><div class="tog-info"><div class="tog-name">Calibrate to human baseline</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="alert('Configuration saved.')">Apply Configuration</button>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── HUMAN EVAL ── -->
+<div class="page" id="page-human-eval">
+  <div class="ph">
+    <div><div class="ph-title">Human <em>Evaluation</em></div><div class="ph-sub">Human-in-the-loop · NASA-TLX workload measurement · Human-only / AI-only / Teaming comparison</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Creating evaluation task...')">+ Create Task</button>
+      <button class="btn" onclick="alert('Exporting TLX data...')">↓ Export TLX</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Active Reviewers</div><div class="kpi-value">8</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Pending Review</div><div class="kpi-value">34</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Avg Workload (TLX)</div><div class="kpi-value">42.1</div></div>
+    <div class="kpi c-violet"><div class="kpi-label">Inter-rater κ</div><div class="kpi-value">0.81</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Evaluation Scenarios</div>
+      <div class="scenario active"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="sc-title">Medical Triage Prioritization</div><div class="sc-id">SCENARIO-TRIAGE-07 · 12 tasks · 8 reviewers</div></div><span class="tag tag-gold">IN PROGRESS</span></div><div style="display:flex;gap:6px;"><span class="tag tag-muted">HUMAN-ONLY</span><span class="tag tag-muted">AI-ONLY</span><span class="tag tag-blue">HUMAN+AI</span></div></div>
+      <div class="scenario"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="sc-title">Intelligence Report Synthesis</div><div class="sc-id">SCENARIO-INTEL-03 · 8 tasks · 6 reviewers</div></div><span class="tag tag-jade">COMPLETE</span></div><div style="display:flex;gap:6px;"><span class="tag tag-muted">HUMAN-ONLY</span><span class="tag tag-muted">AI-ONLY</span><span class="tag tag-blue">HUMAN+AI</span></div></div>
+      <div class="scenario"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;"><div><div class="sc-title">Logistics Route Optimization</div><div class="sc-id">SCENARIO-LOG-11 · 20 tasks</div></div><span class="tag tag-muted">SCHEDULED</span></div><div style="display:flex;gap:6px;"><span class="tag tag-muted">HUMAN-ONLY</span><span class="tag tag-muted">AI-ONLY</span><span class="tag tag-muted">HUMAN+AI</span></div></div>
+
+      <div class="sec" style="margin-top:16px;">Mission Performance Comparison</div>
+      <div class="panel"><div class="panel-inner"><div class="chart-box" style="height:160px;"><canvas id="ch-hperf"></canvas></div></div></div>
+    </div>
+    <div>
+      <div class="sec">NASA-TLX — TRIAGE-07</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+          <div style="padding:12px;background:var(--s0);border:1px solid var(--rim);text-align:center;"><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-bottom:5px;letter-spacing:1.5px;">HUMAN ONLY</div><div style="font-family:var(--font-d);font-size:32px;color:var(--crimson);">68.4</div></div>
+          <div style="padding:12px;background:var(--s0);border:1px solid var(--rim);text-align:center;"><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-bottom:5px;letter-spacing:1.5px;">AI ONLY</div><div style="font-family:var(--font-d);font-size:32px;color:var(--tx-c);">N/A</div></div>
+          <div style="padding:12px;background:rgba(0,201,140,0.04);border:1px solid rgba(0,201,140,0.2);text-align:center;"><div style="font-family:var(--font-m);font-size:8px;color:var(--jade);margin-bottom:5px;letter-spacing:1.5px;">HUMAN + AI</div><div style="font-family:var(--font-d);font-size:32px;color:var(--jade);">38.2</div></div>
+        </div>
+        <div class="wl-row"><div class="wl-lbl">Mental Demand</div><div class="wl-bar"><div class="wl-fill" style="width:72%;background:var(--crimson);"></div></div><div class="wl-val" style="color:var(--crimson)">72</div></div>
+        <div class="wl-row"><div class="wl-lbl">Physical Demand</div><div class="wl-bar"><div class="wl-fill" style="width:28%;background:var(--accent);"></div></div><div class="wl-val" style="color:var(--accent)">28</div></div>
+        <div class="wl-row"><div class="wl-lbl">Temporal Demand</div><div class="wl-bar"><div class="wl-fill" style="width:65%;background:var(--gold);"></div></div><div class="wl-val" style="color:var(--gold)">65</div></div>
+        <div class="wl-row"><div class="wl-lbl">Performance</div><div class="wl-bar"><div class="wl-fill" style="width:55%;background:var(--jade);"></div></div><div class="wl-val" style="color:var(--jade)">55</div></div>
+        <div class="wl-row"><div class="wl-lbl">Effort</div><div class="wl-bar"><div class="wl-fill" style="width:68%;background:var(--gold);"></div></div><div class="wl-val" style="color:var(--gold)">68</div></div>
+        <div class="wl-row"><div class="wl-lbl">Frustration</div><div class="wl-bar"><div class="wl-fill" style="width:42%;background:var(--crimson);"></div></div><div class="wl-val" style="color:var(--crimson)">42</div></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── REPORTING ── -->
+<div class="page" id="page-reporting">
+  <div class="ph">
+    <div><div class="ph-title">Output &amp; <em>Reporting</em></div><div class="ph-sub">Open-format exports · JSON · CSV · SARIF · STIX · Parquet · REST API access</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Generating aggregate report...')">+ Generate Report</button>
+      <button class="btn" onclick="alert('Opening API documentation...')">⎘ API Docs</button>
+    </div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Export Formats</div>
+      <div class="g3 mb" style="margin-bottom:14px;">
+        <div class="exp-tile" onclick="alert('Exporting as JSON...')"><div class="exp-icon">{ }</div><div class="exp-name">JSON</div><div class="exp-desc">Open · Non-proprietary</div></div>
+        <div class="exp-tile" onclick="alert('Exporting as CSV...')"><div class="exp-icon">⊞</div><div class="exp-name">CSV</div><div class="exp-desc">Tabular flat file</div></div>
+        <div class="exp-tile" onclick="alert('Exporting as SARIF...')"><div class="exp-icon">⬡</div><div class="exp-name">SARIF</div><div class="exp-desc">Security findings</div></div>
+        <div class="exp-tile" onclick="alert('Exporting as STIX...')"><div class="exp-icon">◈</div><div class="exp-name">STIX 2.1</div><div class="exp-desc">Threat intelligence</div></div>
+        <div class="exp-tile" onclick="alert('Exporting as Parquet...')"><div class="exp-icon">▣</div><div class="exp-name">Parquet</div><div class="exp-desc">Columnar data</div></div>
+        <div class="exp-tile" onclick="alert('Exporting as PDF...')"><div class="exp-icon">⎗</div><div class="exp-name">PDF / HTML</div><div class="exp-desc">Human-readable</div></div>
+      </div>
+      <div class="sec">Recent Reports</div>
+      <div class="panel"><div class="panel-inner" style="padding:0;">
+        <table class="tbl">
+          <thead><tr><th>Report</th><th>Type</th><th>Date</th><th>Format</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="tbl-name">Q1-2024 Full Suite</td><td><span class="tag tag-blue">AGGREGATE</span></td><td style="font-family:var(--font-m);font-size:10px;">2024-03-11</td><td><span class="tag tag-blue">JSON+CSV</span></td><td><button class="btn" style="padding:3px 8px;font-size:9px;" onclick="alert('Downloading...')">↓</button></td></tr>
+            <tr><td class="tbl-name">Adversarial RED-008</td><td><span class="tag tag-red">RED TEAM</span></td><td style="font-family:var(--font-m);font-size:10px;">2024-03-10</td><td><span class="tag tag-gold">SARIF</span></td><td><button class="btn" style="padding:3px 8px;font-size:9px;" onclick="alert('Downloading...')">↓</button></td></tr>
+            <tr><td class="tbl-name">DDIL Blackout Sim</td><td><span class="tag tag-gold">STRESS TEST</span></td><td style="font-family:var(--font-m);font-size:10px;">2024-03-09</td><td><span class="tag tag-blue">JSON</span></td><td><button class="btn" style="padding:3px 8px;font-size:9px;" onclick="alert('Downloading...')">↓</button></td></tr>
+            <tr><td class="tbl-name">Human Eval TRIAGE-07</td><td><span class="tag tag-violet">HUMAN</span></td><td style="font-family:var(--font-m);font-size:10px;">2024-03-08</td><td><span class="tag tag-blue">CSV+PDF</span></td><td><button class="btn" style="padding:3px 8px;font-size:9px;" onclick="alert('Downloading...')">↓</button></td></tr>
+          </tbody>
+        </table>
+      </div></div>
+    </div>
+    <div>
+      <div class="sec">REST API · v2.4</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--tx-c);margin-bottom:6px;">BASE URL</div>
+        <div style="font-family:var(--font-m);font-size:11px;color:var(--accent);padding:8px 10px;background:var(--ink);border:1px solid var(--rim);margin-bottom:14px;">https://apex.mil/api/v2</div>
+        <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/evaluations</span><span class="ep-desc">List all runs</span></div>
+        <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/evaluations/{id}/results</span><span class="ep-desc">Full results</span></div>
+        <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/models/{id}/scores</span><span class="ep-desc">Score history</span></div>
+        <div class="ep"><span class="ep-m post">POST</span><span class="ep-path">/reports/generate</span><span class="ep-desc">Trigger report</span></div>
+        <div class="ep"><span class="ep-m get">GET</span><span class="ep-path">/benchmarks/{id}/schema</span><span class="ep-desc">Benchmark schema</span></div>
+      </div></div>
+      <div class="sec">Authentication</div>
+      <div class="panel"><div class="panel-inner">
+        <div class="fg"><div class="fl">Auth Method</div><select><option>mTLS + JWT (CAC/PIV)</option><option>API Key</option><option>OAuth 2.0</option></select></div>
+        <div class="fg"><div class="fl">Access Level</div><select><option>Read Only</option><option>Read + Export</option><option>Full Admin</option></select></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Audit All API Calls</div><div class="tog-desc">Immutable tamper-evident log (WORM)</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row" style="margin-bottom:14px;"><div class="tog-info"><div class="tog-name">Rate Limiting</div><div class="tog-desc">100 req/min per token</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="alert('API key generated.')">Generate API Key</button>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MONITORING ── -->
+<div class="page" id="page-monitoring">
+  <div class="ph">
+    <div><div class="ph-title">Continuous <em>Monitoring</em></div><div class="ph-sub">Automated model ingestion · Drift detection · Performance trends · Real-time analytics</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Configuring auto-ingest...')">⚡ Config Auto-Ingest</button>
+      <button class="btn btn-gold" onclick="alert('Setting alert thresholds...')">🔔 Alert Config</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Auto-Ingested (7d)</div><div class="kpi-value">184</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Drift Alerts</div><div class="kpi-value">2</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Avg Latency</div><div class="kpi-value">847ms</div></div>
+    <div class="kpi c-red"><div class="kpi-label">Anomalies</div><div class="kpi-value">5</div></div>
+  </div>
+  <div class="g2 mb">
+    <div class="panel"><div class="panel-inner"><div class="panel-title">Performance Trends — 14 Days</div><div class="chart-box" style="height:190px;"><canvas id="ch-trends"></canvas></div></div></div>
+    <div class="panel"><div class="panel-inner"><div class="panel-title">Latency Distribution</div><div class="chart-box" style="height:190px;"><canvas id="ch-lat"></canvas></div></div></div>
+  </div>
+  <div class="g2">
+    <div class="panel"><div class="panel-inner">
+      <div class="panel-title">Model Score Sparklines</div>
+      <div class="spark-row"><div class="spark-lbl">GPT-4o MMLU</div><canvas class="spark-c" id="sp1"></canvas><div class="spark-val">88.4</div><div class="spark-d up">+0.3%</div></div>
+      <div class="spark-row"><div class="spark-lbl">Claude-3.5 TQA</div><canvas class="spark-c" id="sp2"></canvas><div class="spark-val">84.5</div><div class="spark-d up">+1.1%</div></div>
+      <div class="spark-row"><div class="spark-lbl">Llama-3.1 MMLU</div><canvas class="spark-c" id="sp3"></canvas><div class="spark-val">78.2</div><div class="spark-d dn">-0.4%</div></div>
+      <div class="spark-row"><div class="spark-lbl">Gemini TruthQA</div><canvas class="spark-c" id="sp4"></canvas><div class="spark-val">79.8</div><div class="spark-d" style="color:var(--tx-c)">±0.0%</div></div>
+      <div class="spark-row"><div class="spark-lbl">Mistral Cyber</div><canvas class="spark-c" id="sp5"></canvas><div class="spark-val">71.3</div><div class="spark-d dn">-2.4%</div></div>
+    </div></div>
+    <div class="panel"><div class="panel-inner">
+      <div class="panel-title">Auto-Ingest Configuration</div>
+      <div class="fg"><div class="fl">Ingest Schedule</div><select><option>Every 6 hours</option><option>Every 12 hours</option><option>Daily</option><option>On Model Update</option></select></div>
+      <div class="fg"><div class="fl">Model Registry Source</div><select><option>HuggingFace Hub</option><option>Internal Registry</option><option>Both</option></select></div>
+      <div class="tog-row"><div class="tog-info"><div class="tog-name">Drift Detection</div><div class="tog-desc">Threshold: 2σ from rolling baseline</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+      <div class="tog-row"><div class="tog-info"><div class="tog-name">Auto-Alert on Regression</div><div class="tog-desc">SIEM webhook + email notification</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+      <div class="tog-row" style="margin-bottom:14px;"><div class="tog-info"><div class="tog-name">Export to SIEM</div><div class="tog-desc">Splunk / ELK / Sentinel integration</div></div><label class="tog"><input type="checkbox"><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="alert('Monitoring config saved.')">Save Configuration</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- ── BENCHMARKS ── -->
+<div class="page" id="page-benchmarks">
+  <div class="ph">
+    <div><div class="ph-title">Benchmark <em>Management</em></div><div class="ph-sub">Version-controlled · Cryptographically validated · Interoperable · Decoupled from harness infrastructure</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Opening benchmark editor...')">+ Create Benchmark</button>
+      <button class="btn btn-gold" onclick="alert('Importing benchmark package...')">↑ Import</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Total Benchmarks</div><div class="kpi-value">47</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Validated / Active</div><div class="kpi-value">44</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Pending Validation</div><div class="kpi-value">3</div></div>
+    <div class="kpi c-violet"><div class="kpi-label">Interop Decoupled</div><div class="kpi-value">✓</div></div>
+  </div>
+  <div class="g3 mb">
+    <div class="bench"><div class="bench-v">v3.1.2 · MMLU-PRO</div><div class="bench-n">Massive Multitask Language Understanding Pro</div><div class="bench-d">Professional reasoning across 57 knowledge domains</div><div class="bench-tags"><span class="tag tag-jade">ACTIVE</span><span class="tag tag-muted">14,000 TASKS</span><span class="tag tag-muted">REASONING</span></div></div>
+    <div class="bench"><div class="bench-v">v1.0 · HUMANEVAL</div><div class="bench-n">Code Generation Evaluation</div><div class="bench-d">Python synthesis from docstrings — 164 problems</div><div class="bench-tags"><span class="tag tag-jade">ACTIVE</span><span class="tag tag-muted">164 TASKS</span><span class="tag tag-muted">CODE</span></div></div>
+    <div class="bench"><div class="bench-v">v0.3 · TRUTHFULQA</div><div class="bench-n">Truthfulness &amp; Hallucination</div><div class="bench-d">Questions designed to elicit false responses</div><div class="bench-tags"><span class="tag tag-jade">ACTIVE</span><span class="tag tag-muted">817 TASKS</span><span class="tag tag-muted">SAFETY</span></div></div>
+    <div class="bench"><div class="bench-v">v2.0 · CYBER-AWARE</div><div class="bench-n">Cybersecurity Awareness Suite</div><div class="bench-d">Threat ID, incident analysis, CTI reasoning</div><div class="bench-tags"><span class="tag tag-jade">ACTIVE</span><span class="tag tag-muted">1,200 TASKS</span><span class="tag tag-red">CONTROLLED</span></div></div>
+    <div class="bench"><div class="bench-v">v1.1 · MISSION-SIM</div><div class="bench-n">Mission Simulation Benchmark</div><div class="bench-d">Tactical decision support under uncertainty</div><div class="bench-tags"><span class="tag tag-gold">PENDING</span><span class="tag tag-muted">400 TASKS</span><span class="tag tag-red">CONTROLLED</span></div></div>
+    <div class="bench"><div class="bench-v">v0.8 · MULTIMODAL-X</div><div class="bench-n">Cross-Modal Reasoning Eval</div><div class="bench-d">Video / audio / image / text fusion framework</div><div class="bench-tags"><span class="tag tag-gold">DRAFT</span><span class="tag tag-muted">600 TASKS</span><span class="tag tag-muted">MULTIMODAL</span></div></div>
+  </div>
+  <div class="sec">Version Control Log</div>
+  <div class="terminal">
+    <div><span class="t-inf">MMLU-Pro</span> <span class="t-dim">v3.1.2 → v3.1.3</span> +42 tasks in cybersecurity domain, updated scoring rubric for open-ended responses</div>
+    <div><span class="t-wrn">CYBER-AWARE</span> <span class="t-dim">v1.9 → v2.0</span> BREAKING: scoring schema migrated to JSON-Schema v7, 3 deprecated metrics removed</div>
+    <div><span class="t-dim">MISSION-SIM</span> v1.0 → v1.1  Fix: corrected 7 ambiguous ground-truth labels in TRIAGE submodule</div>
+    <div><span class="t-ok">✓ VALIDATED</span> All production benchmarks hashed SHA-256 · Registry: bench-registry.apex.mil</div>
+    <div><span class="t-dim">LOCK FILE:</span> apex-benchmarks.lock.json · 47 benchmarks · 2024-03-11T14:00:00Z</div>
+  </div>
+</div>
+
+<!-- ── DDIL ── -->
+<div class="page" id="page-ddil">
+  <div class="ph">
+    <div><div class="ph-title">DDIL <em>Simulator</em></div><div class="ph-sub">Denied · Degraded · Intermittent · Limited · Network stress &amp; resilience assessment</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-red" onclick="startDDIL()">▶ Start Simulation</button>
+      <button class="btn" onclick="resetDDIL()">↺ Reset Baseline</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-red"><div class="kpi-label">Simulation Mode</div><div class="kpi-value" id="dd-mode">STANDBY</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Induced Latency</div><div class="kpi-value" id="dd-lat">0ms</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Packet Loss</div><div class="kpi-value" id="dd-loss">0%</div></div>
+    <div class="kpi c-blue"><div class="kpi-label">Bandwidth</div><div class="kpi-value" id="dd-bw">100%</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel"><div class="panel-inner">
+      <div class="panel-title">Simulation Controls</div>
+      <div class="sim-row"><div class="sim-lbl">Latency (ms)</div><div class="sim-rng"><input type="range" min="0" max="5000" value="0" id="rng-lat" oninput="updDDIL()"></div><div class="sim-val" id="sv-lat">0</div></div>
+      <div class="sim-row"><div class="sim-lbl">Packet Loss (%)</div><div class="sim-rng"><input type="range" min="0" max="100" value="0" id="rng-loss" oninput="updDDIL()"></div><div class="sim-val" id="sv-loss">0%</div></div>
+      <div class="sim-row"><div class="sim-lbl">Bandwidth (%)</div><div class="sim-rng"><input type="range" min="1" max="100" value="100" id="rng-bw" oninput="updDDIL()"></div><div class="sim-val" id="sv-bw">100%</div></div>
+      <div class="sim-row" style="border-bottom:none;"><div class="sim-lbl">Jitter (ms)</div><div class="sim-rng"><input type="range" min="0" max="500" value="0" id="rng-jit" oninput="updDDIL()"></div><div class="sim-val" id="sv-jit">0</div></div>
+
+      <div class="sec" style="margin-top:18px;">Preset Scenarios</div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+        <button class="btn btn-gold" onclick="ddPreset('contested')" style="justify-content:center;">Contested Comms</button>
+        <button class="btn btn-red" onclick="ddPreset('blackout')" style="justify-content:center;">Comm Blackout</button>
+        <button class="btn" onclick="ddPreset('satcom')" style="justify-content:center;">SATCOM Link</button>
+        <button class="btn btn-jade" onclick="ddPreset('baseline')" style="justify-content:center;">Full Baseline</button>
+      </div>
+    </div></div>
+
+    <div>
+      <div class="sec">Network Conditions</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div class="net-viz">
+          <div class="net-node"><div class="net-node-icon">⬡</div><div class="net-node-name">AI Model</div><div class="net-node-st" id="dd-model-st">NOMINAL</div></div>
+          <div class="net-pipe"><div class="net-line"></div><div class="net-stats" id="dd-pipe-st">Full bandwidth</div></div>
+          <div class="net-node"><div class="net-node-icon">◈</div><div class="net-node-name">Harness</div><div class="net-node-st">OPERATIONAL</div></div>
+        </div>
+      </div></div>
+      <div class="sec">Performance Under Stress</div>
+      <div class="panel"><div class="panel-inner"><div class="chart-box" style="height:180px;"><canvas id="ch-ddil"></canvas></div></div></div>
+    </div>
+  </div>
+  <div class="sec" style="margin-top:18px;">Run History</div>
+  <div class="panel"><div class="panel-inner" style="padding:0;">
+    <table class="tbl">
+      <thead><tr><th>Run ID</th><th>Scenario</th><th>Latency</th><th>Loss</th><th>BW</th><th>Score Δ</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>DDIL-031</td><td class="tbl-name">BLACKOUT-3</td><td style="color:var(--crimson);font-family:var(--font-m)">2,400ms</td><td style="color:var(--crimson);font-family:var(--font-m)">35%</td><td style="font-family:var(--font-m)">10%</td><td style="color:var(--crimson);font-family:var(--font-m)">−24.1 pts</td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+        <tr><td>DDIL-030</td><td class="tbl-name">SATCOM-1</td><td style="color:var(--gold);font-family:var(--font-m)">650ms</td><td style="color:var(--gold);font-family:var(--font-m)">12%</td><td style="font-family:var(--font-m)">45%</td><td style="color:var(--gold);font-family:var(--font-m)">−8.3 pts</td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+        <tr><td>DDIL-029</td><td class="tbl-name">CONTESTED-A</td><td style="color:var(--gold);font-family:var(--font-m)">300ms</td><td style="font-family:var(--font-m)">5%</td><td style="font-family:var(--font-m)">70%</td><td style="color:var(--gold);font-family:var(--font-m)">−3.1 pts</td><td><span class="tag tag-jade">COMPLETE</span></td></tr>
+      </tbody>
+    </table>
+  </div></div>
+</div>
+
+<!-- ── AGENTIC ── -->
+<div class="page" id="page-agentic">
+  <div class="ph">
+    <div><div class="ph-title">Agentic <em>Evaluation</em></div><div class="ph-sub">Multi-step task execution · Tool invocations · Decision auditing · Isolated sandbox</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Launching task in sandbox...')">▶ Launch Task</button>
+      <button class="btn btn-gold" onclick="alert('Viewing full audit trail...')">⎘ Audit Trail</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Tasks Completed</div><div class="kpi-value">882</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Tool Invocations</div><div class="kpi-value">14,221</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Avg Steps / Task</div><div class="kpi-value">16.1</div></div>
+    <div class="kpi c-red"><div class="kpi-label">Unsafe Actions Caught</div><div class="kpi-value">24</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Active Task — TASK-882</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+          <div><div style="font-family:var(--font-h);font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Web Research &amp; Synthesis</div><div style="font-family:var(--font-m);font-size:9px;color:var(--tx-c);margin-top:2px;">Model: GPT-4o · Env: Sandbox-Alpha · Isolation: ACTIVE</div></div>
+          <span class="tag tag-jade">COMPLETE</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <div style="text-align:center;padding:10px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:28px;color:var(--accent);">14</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);letter-spacing:1.5px;">TOOL CALLS</div></div>
+          <div style="text-align:center;padding:10px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:28px;color:var(--jade);">0</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);letter-spacing:1.5px;">ERRORS</div></div>
+          <div style="text-align:center;padding:10px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:28px;color:var(--gold);">4.2s</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);letter-spacing:1.5px;">DURATION</div></div>
+        </div>
+      </div></div>
+
+      <div class="sec">Audit Trail — Execution Timeline</div>
+      <div style="max-height:300px;overflow-y:auto;padding-right:2px;">
+        <div class="timeline">
+          <div class="tl-item"><div class="tl-dot ok"></div><div class="tl-ts">T+0.00s</div><div class="tl-card ok"><div class="tl-action">Task Initialized</div><div class="tl-detail">Context loaded · sandbox isolated · WORM audit log started</div></div></div>
+          <div class="tl-item"><div class="tl-dot tool"></div><div class="tl-ts">T+0.22s</div><div class="tl-card tool"><div class="tl-action">Tool: web_search</div><div class="tl-detail">query="AI evaluation frameworks 2024" → 10 results returned</div></div></div>
+          <div class="tl-item"><div class="tl-dot tool"></div><div class="tl-ts">T+0.84s</div><div class="tl-card tool"><div class="tl-action">Tool: fetch_url</div><div class="tl-detail">url="https://arxiv.org/..." → 3,412 tokens extracted</div></div></div>
+          <div class="tl-item"><div class="tl-dot decide"></div><div class="tl-ts">T+1.20s</div><div class="tl-card decide"><div class="tl-action">Decision Point</div><div class="tl-detail">Chose source A over B — recency: 2024 vs 2022</div></div></div>
+          <div class="tl-item"><div class="tl-dot tool"></div><div class="tl-ts">T+1.55s</div><div class="tl-card tool"><div class="tl-action">Tool: web_search</div><div class="tl-detail">query="government AI benchmark standards NIST" → 8 results</div></div></div>
+          <div class="tl-item"><div class="tl-dot tool"></div><div class="tl-ts">T+2.11s</div><div class="tl-card tool"><div class="tl-action">Tool: code_execution</div><div class="tl-detail">python: data aggregation + table generation — SUCCESS</div></div></div>
+          <div class="tl-item"><div class="tl-dot decide"></div><div class="tl-ts">T+3.40s</div><div class="tl-card decide"><div class="tl-action">Synthesis Complete</div><div class="tl-detail">Report generated · 847 words · 4 citations</div></div></div>
+          <div class="tl-item"><div class="tl-dot ok"></div><div class="tl-ts">T+4.20s</div><div class="tl-card ok"><div class="tl-action">Task Complete ✓</div><div class="tl-detail">Output validated against ground truth — Score: 91.2%</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Agent Performance</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner"><div class="chart-box" style="height:200px;"><canvas id="ch-agent"></canvas></div></div></div>
+      <div class="sec">Sandbox Safety Controls</div>
+      <div class="panel"><div class="panel-inner">
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Network Isolation</div><div class="tog-desc">Sandboxed namespace · no external egress</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">File System Restrictions</div><div class="tog-desc">Read-only mounts · no persistence</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">Action Allowlist Enforcement</div><div class="tog-desc">Only approved tool invocations permitted</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+        <div class="tog-row"><div class="tog-info"><div class="tog-name">WORM Audit Log</div><div class="tog-desc">Immutable tamper-evident · cryptographic chain</div></div><label class="tog"><input type="checkbox" checked><div class="tog-track"></div><div class="tog-thumb"></div></label></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADVERSARIAL ── -->
+<div class="page" id="page-adversarial">
+  <div class="ph">
+    <div><div class="ph-title">Adversarial <em>AI</em></div><div class="ph-sub">Automated red-teaming · Prompt injection · Jailbreak · Robustness scoring · SARIF export</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-red" onclick="alert('Launching red-team campaign...')">⚔ Launch Campaign</button>
+      <button class="btn btn-gold" onclick="alert('Exporting as SARIF...')">↓ Export SARIF</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-red"><div class="kpi-label">Campaigns Run</div><div class="kpi-value">41</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Total Probes</div><div class="kpi-value">12,440</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Avg Robustness</div><div class="kpi-value">96.1%</div></div>
+    <div class="kpi c-blue"><div class="kpi-label">Critical Failures</div><div class="kpi-value">3</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Attack Category Robustness</div>
+      <div class="atk-item"><div class="atk-row"><div class="atk-name">Prompt Injection</div><div class="atk-score" style="color:var(--jade)">97.2%</div></div><div class="prog"><div class="prog-fill jade" style="width:97.2%"></div></div><div class="atk-meta">3,200 probes · 89 bypasses detected</div></div>
+      <div class="atk-item"><div class="atk-row"><div class="atk-name">Jailbreak / Role-Play</div><div class="atk-score" style="color:var(--jade)">94.8%</div></div><div class="prog"><div class="prog-fill jade" style="width:94.8%"></div></div><div class="atk-meta">1,840 probes · 96 bypasses detected</div></div>
+      <div class="atk-item"><div class="atk-row"><div class="atk-name">Data Exfiltration</div><div class="atk-score" style="color:var(--gold)">91.3%</div></div><div class="prog"><div class="prog-fill gold" style="width:91.3%"></div></div><div class="atk-meta">980 probes · 85 bypasses detected</div></div>
+      <div class="atk-item"><div class="atk-row"><div class="atk-name">Adversarial Suffixes</div><div class="atk-score" style="color:var(--jade)">98.1%</div></div><div class="prog"><div class="prog-fill jade" style="width:98.1%"></div></div><div class="atk-meta">2,100 probes · 40 bypasses detected</div></div>
+      <div class="atk-item"><div class="atk-row"><div class="atk-name">Multimodal Attacks</div><div class="atk-score" style="color:var(--gold)">88.4%</div></div><div class="prog"><div class="prog-fill gold" style="width:88.4%"></div></div><div class="atk-meta">1,120 probes · 130 bypasses detected</div></div>
+      <div class="atk-item" style="border-left-color:var(--crimson)"><div class="atk-row"><div class="atk-name">Supply Chain / Indirect</div><div class="atk-score" style="color:var(--crimson)">79.2%</div></div><div class="prog"><div class="prog-fill red" style="width:79.2%"></div></div><div class="atk-meta" style="color:var(--crimson)">1,200 probes · 250 bypasses — ⚠ REVIEW REQUIRED</div></div>
+    </div>
+    <div>
+      <div class="sec">Robustness by Model</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner"><div class="chart-box" style="height:200px;"><canvas id="ch-adv"></canvas></div></div></div>
+      <div class="sec">Campaign — RED-009</div>
+      <div class="panel"><div class="panel-inner">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:var(--font-h);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Llama-3.1 Full Red Team</div>
+          <span class="tag tag-jade">RUNNING</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;text-align:center;">
+          <div style="padding:8px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:22px;color:var(--accent);">1,241</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);">PROBES</div></div>
+          <div style="padding:8px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:22px;color:var(--gold);">67</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);">BYPASSES</div></div>
+          <div style="padding:8px;background:var(--s0);border:1px solid var(--rim);"><div style="font-family:var(--font-d);font-size:22px;color:var(--jade);">94.6%</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);">ROBUSTNESS</div></div>
+        </div>
+        <div class="prog" style="height:5px;"><div class="prog-fill gold" style="width:62%"></div></div>
+        <div style="font-family:var(--font-m);font-size:9px;color:var(--tx-c);margin-top:5px;letter-spacing:0.5px;">62% complete · ~18 min remaining</div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MULTIMODAL ── -->
+<div class="page" id="page-multimodal">
+  <div class="ph">
+    <div><div class="ph-title">Multimodal <em>Inputs</em></div><div class="ph-sub">Video · Audio · Image · Text · Cross-modal evaluation datasets &amp; comparison frameworks</div></div>
+    <div class="ph-actions">
+      <button class="btn btn-jade" onclick="alert('Uploading multimodal dataset...')">↑ Upload Dataset</button>
+      <button class="btn" onclick="alert('Starting cross-modal evaluation...')">▶ Cross-Modal Eval</button>
+    </div>
+  </div>
+  <div class="kpi-grid kpi-4 mb2">
+    <div class="kpi c-blue"><div class="kpi-label">Datasets Loaded</div><div class="kpi-value">18</div></div>
+    <div class="kpi c-jade"><div class="kpi-label">Video Clips</div><div class="kpi-value">4,120</div></div>
+    <div class="kpi c-gold"><div class="kpi-label">Audio Samples</div><div class="kpi-value">8,840</div></div>
+    <div class="kpi c-violet"><div class="kpi-label">Cross-Modal Tasks</div><div class="kpi-value">2,200</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sec">Modality Selector</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+        <button class="mm-btn active" onclick="setMM(this)">▶ Video</button>
+        <button class="mm-btn" onclick="setMM(this)">♪ Audio</button>
+        <button class="mm-btn" onclick="setMM(this)">⊡ Image</button>
+        <button class="mm-btn" onclick="setMM(this)">⊞ Text</button>
+        <button class="mm-btn" onclick="setMM(this)">⇄ Cross-Modal</button>
+      </div>
+      <div class="sec">Upload Dataset</div>
+      <div class="upload mb" onclick="alert('Select multimodal dataset...')">
+        <div class="upload-icon">↑</div>
+        <div class="upload-lbl">Drop Files or Click to Upload</div>
+        <div class="upload-sub">MP4 · MKV · WAV · MP3 · PNG · JPEG · JSON · JSONL · Max 50GB per batch</div>
+      </div>
+      <div class="sec">Loaded Datasets</div>
+      <div class="panel"><div class="panel-inner" style="padding:0;">
+        <table class="tbl">
+          <thead><tr><th>Dataset</th><th>Type</th><th>Size</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="tbl-name">VQA-v2</td><td><span class="tag tag-muted">IMAGE+TEXT</span></td><td style="font-family:var(--font-m);font-size:10px;">214K tasks</td><td><span class="tag tag-jade">READY</span></td></tr>
+            <tr><td class="tbl-name">ActivityNet-QA</td><td><span class="tag tag-blue">VIDEO+TEXT</span></td><td style="font-family:var(--font-m);font-size:10px;">5,800 clips</td><td><span class="tag tag-jade">READY</span></td></tr>
+            <tr><td class="tbl-name">AudioCaps</td><td><span class="tag tag-gold">AUDIO+TEXT</span></td><td style="font-family:var(--font-m);font-size:10px;">46K samples</td><td><span class="tag tag-jade">READY</span></td></tr>
+            <tr><td class="tbl-name">Internal-MM-01</td><td><span class="tag tag-red">MULTI</span></td><td style="font-family:var(--font-m);font-size:10px;">2,200 tasks</td><td><span class="tag tag-red">CONTROLLED</span></td></tr>
+          </tbody>
+        </table>
+      </div></div>
+    </div>
+    <div>
+      <div class="sec">Cross-Modal Performance</div>
+      <div class="panel mb" style="margin-bottom:14px;"><div class="panel-inner"><div class="chart-box" style="height:220px;"><canvas id="ch-mm"></canvas></div></div></div>
+      <div class="sec">Modality Metrics</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="background:var(--s0);border:1px solid var(--rim);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Video Understanding</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-top:2px;">Temporal reasoning · action recognition</div></div><div style="font-family:var(--font-d);font-size:24px;color:var(--accent);">78.4%</div></div>
+        <div style="background:var(--s0);border:1px solid var(--rim);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Audio Transcription</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-top:2px;">WER · speaker diarization accuracy</div></div><div style="font-family:var(--font-d);font-size:24px;color:var(--jade);">91.2%</div></div>
+        <div style="background:var(--s0);border:1px solid var(--rim);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Image-Text Alignment</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-top:2px;">CLIP score · VQA accuracy</div></div><div style="font-family:var(--font-d);font-size:24px;color:var(--gold);">84.7%</div></div>
+        <div style="background:var(--s0);border:1px solid var(--rim);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx-a);">Cross-Modal Fusion</div><div style="font-family:var(--font-m);font-size:8px;color:var(--tx-c);margin-top:2px;">Multi-source coherence · grounding</div></div><div style="font-family:var(--font-d);font-size:24px;color:var(--violet);">72.1%</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main><!-- /main -->
+
+<script>
+/* ═══════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════ */
+function fmtClock() {
+  const n = new Date();
+  const h = String(n.getUTCHours()).padStart(2,'0');
+  const m = String(n.getUTCMinutes()).padStart(2,'0');
+  const s = String(n.getUTCSeconds()).padStart(2,'0');
+  return `ZULU ${h}:${m}:${s}`;
+}
+function tickClock() {
+  const t = fmtClock();
+  document.getElementById('topbar-clock').textContent = t;
+}
+tickClock(); setInterval(tickClock, 1000);
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════ */
+const pageLabels = {
+  'dashboard':    'Command Dashboard',
+  'model-iface':  'Model Interface',
+  'execution':    'Execution Engine',
+  'scoring':      'Scoring System',
+  'human-eval':   'Human Evaluation',
+  'reporting':    'Reporting & Output',
+  'monitoring':   'Monitoring',
+  'benchmarks':   'Benchmark Management',
+  'ddil':         'DDIL Simulator',
+  'agentic':      'Agentic Evaluation',
+  'adversarial':  'Adversarial AI',
+  'multimodal':   'Multimodal',
+};
+
+function nav(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  if (btn) btn.classList.add('active');
+  const lbl = pageLabels[id] || id;
+  document.getElementById('tb-page-label').textContent = lbl;
+  lazyCharts(id);
+}
+
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+function tab(scope, id, btn) {
+  document.querySelectorAll(`#page-${scope} .tab-pane`).forEach(p => p.classList.remove('active'));
+  document.querySelectorAll(`#page-${scope} .tab-btn`).forEach(b => b.classList.remove('active'));
+  const el = document.getElementById(`${scope}-${id}`);
+  if (el) el.classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (scope === 'sc' && id === 'overview') { initScoringCharts(); }
+}
+
+/* ═══════════════════════════════════════
+   CHART DEFAULTS
+═══════════════════════════════════════ */
+Chart.defaults.color = '#4e7c9a';
+Chart.defaults.borderColor = '#1a3048';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+
+const BLUE='#3db8f5', JADE='#00c98c', GOLD='#e8a200', RED='#e63355', VIO='#8b6cff';
+const BA=BLUE+'22', JA=JADE+'18', GA=GOLD+'18', RA=RED+'18';
+
+let C = {};
+function dc(k) { if(C[k]) { C[k].destroy(); delete C[k]; } }
+function ri(n,a,b) { return Array.from({length:n},()=>Math.round(Math.random()*(b-a)+a)); }
+
+const gridColor = '#1a304880';
+const commonScales = {
+  x: { grid: { color: gridColor }, ticks: { color: '#254a62' } },
+  y: { grid: { color: gridColor }, ticks: { color: '#254a62' } }
+};
+
+/* ═══════════════════════════════════════
+   LAZY CHART INIT
+═══════════════════════════════════════ */
+function lazyCharts(id) {
+  if (id === 'dashboard')   setTimeout(initDash, 50);
+  if (id === 'execution')   setTimeout(initExec, 50);
+  if (id === 'scoring')     setTimeout(initScoring, 50);
+  if (id === 'human-eval')  setTimeout(initHuman, 50);
+  if (id === 'monitoring')  setTimeout(initMonitor, 50);
+  if (id === 'ddil')        setTimeout(initDDIL, 50);
+  if (id === 'agentic')     setTimeout(initAgent, 50);
+  if (id === 'adversarial') setTimeout(initAdv, 50);
+  if (id === 'multimodal')  setTimeout(initMM, 50);
+}
+
+/* ── Dashboard ── */
+function initDash() {
+  dc('vol'); dc('bench');
+  const days = Array.from({length:30},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-29+i); return `${d.getMonth()+1}/${d.getDate()}`; });
+  C.vol = new Chart(document.getElementById('ch-vol'),{type:'bar',data:{labels:days,datasets:[{data:ri(30,60,280),backgroundColor:BA,borderColor:BLUE,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:commonScales}});
+  const models=['GPT-4o','Claude','Gemini','Llama','Mistral'];
+  const cols=[BLUE,JADE,GOLD,VIO,RED];
+  C.bench = new Chart(document.getElementById('ch-bench'),{type:'bar',data:{labels:['MMLU','HumanEval','TruthfulQA','CYBER','MISSION'],datasets:models.map((m,i)=>({label:m,data:ri(5,62,93),backgroundColor:cols[i]+'33',borderColor:cols[i],borderWidth:1}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:12,color:'#4e7c9a'}}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:50,max:100}}}});
+}
+
+/* ── Execution ── */
+function initExec() {
+  dc('res');
+  C.res = new Chart(document.getElementById('ch-res'),{type:'line',data:{labels:Array.from({length:20},(_,i)=>i+'m'),datasets:[{label:'CPU %',data:ri(20,25,88),borderColor:BLUE,backgroundColor:BA,tension:0.4,fill:true,pointRadius:0},{label:'Mem %',data:ri(20,38,68),borderColor:GOLD,backgroundColor:GA,tension:0.4,fill:true,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:0,max:100}}}});
+}
+
+/* ── Scoring ── */
+function initScoring() { initScoringCharts(); }
+
+function initScoringCharts() {
+  dc('radar'); dc('scatter');
+  C.radar = new Chart(document.getElementById('ch-radar'),{type:'radar',data:{labels:['Accuracy','Safety','Reasoning','Robustness','Calibration','Latency'],datasets:[{label:'GPT-4o',data:[88,82,87,96,84,78],borderColor:BLUE,backgroundColor:BA,pointBackgroundColor:BLUE,pointRadius:3},{label:'Claude-3.5',data:[87,90,85,94,88,82],borderColor:JADE,backgroundColor:JA,pointBackgroundColor:JADE,pointRadius:3},{label:'Llama-3.1',data:[78,74,80,88,72,90],borderColor:GOLD,backgroundColor:GA,pointBackgroundColor:GOLD,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{r:{grid:{color:gridColor},angleLines:{color:gridColor},pointLabels:{color:'#4e7c9a'},min:60,max:100,ticks:{display:false}}}}});
+  C.scatter = new Chart(document.getElementById('ch-scatter'),{type:'scatter',data:{datasets:[{label:'GPT-4o',data:Array.from({length:12},()=>({x:Math.round(Math.random()*12+80),y:Math.round(Math.random()*10+83)})),backgroundColor:BLUE+'aa',pointRadius:5},{label:'Claude-3.5',data:Array.from({length:10},()=>({x:Math.round(Math.random()*10+79),y:Math.round(Math.random()*10+80)})),backgroundColor:JADE+'aa',pointRadius:5},{label:'Others',data:Array.from({length:14},()=>({x:Math.round(Math.random()*20+62),y:Math.round(Math.random()*20+63)})),backgroundColor:GOLD+'77',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x,title:{display:true,text:'Benchmark Score (%)',color:'#254a62'}},y:{...commonScales.y,title:{display:true,text:'Human Rating (%)',color:'#254a62'}}}}});
+}
+
+/* ── Human Eval ── */
+function initHuman() {
+  dc('hperf');
+  C.hperf = new Chart(document.getElementById('ch-hperf'),{type:'bar',data:{labels:['Accuracy','Speed','Decision','Situational','Completion'],datasets:[{label:'Human Only',data:[72,58,76,70,68],backgroundColor:RA,borderColor:RED,borderWidth:1},{label:'AI Only',data:[85,92,78,65,88],backgroundColor:GA,borderColor:GOLD,borderWidth:1},{label:'Human+AI',data:[91,88,93,88,96],backgroundColor:JA,borderColor:JADE,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:50,max:100}}}});
+}
+
+/* ── Monitoring ── */
+function initMonitor() {
+  dc('trends'); dc('lat');
+  const days14 = Array.from({length:14},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-13+i); return `${d.getMonth()+1}/${d.getDate()}`; });
+  C.trends = new Chart(document.getElementById('ch-trends'),{type:'line',data:{labels:days14,datasets:[{label:'GPT-4o',data:ri(14,85,92),borderColor:BLUE,tension:0.4,pointRadius:2,fill:false},{label:'Claude-3.5',data:ri(14,83,90),borderColor:JADE,tension:0.4,pointRadius:2,fill:false},{label:'Llama-3.1',data:ri(14,74,82),borderColor:GOLD,tension:0.4,pointRadius:2,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:70,max:95}}}});
+  C.lat = new Chart(document.getElementById('ch-lat'),{type:'bar',data:{labels:['<200ms','200-400','400-800','800-1600','1600-3200','>3200ms'],datasets:[{data:[120,340,480,260,85,20],backgroundColor:[JADE+'66',BLUE+'66',BLUE+'44',GOLD+'55',RED+'44',RED+'77'],borderColor:[JADE,BLUE,BLUE,GOLD,RED,RED],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:commonScales}});
+  renderSparks();
+}
+
+function renderSparks() {
+  const base=[88,84,78,80,71]; const cols=[BLUE,JADE,GOLD,VIO,RED];
+  for(let i=1;i<=5;i++){
+    const cv=document.getElementById('sp'+i); if(!cv) continue;
+    cv.width=cv.offsetWidth||180; cv.height=28;
+    const ctx=cv.getContext('2d');
+    const data=Array.from({length:14},()=>base[i-1]+(Math.random()-0.5)*6);
+    const mn=Math.min(...data)-1,mx=Math.max(...data)+1,w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    const gr=ctx.createLinearGradient(0,0,0,h);
+    gr.addColorStop(0,cols[i-1]+'44'); gr.addColorStop(1,cols[i-1]+'00');
+    ctx.beginPath();
+    data.forEach((v,j)=>{ const x=(j/(data.length-1))*w,y=h-((v-mn)/(mx-mn))*(h-4)-2; j===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+    ctx.strokeStyle=cols[i-1]; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fillStyle=gr; ctx.fill();
+  }
+}
+
+/* ── DDIL ── */
+function initDDIL() {
+  dc('ddil');
+  C.ddil = new Chart(document.getElementById('ch-ddil'),{type:'line',data:{labels:['0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%'],datasets:[{label:'Score vs Packet Loss',data:[88,87,85,82,77,70,61,50,38,24,12],borderColor:RED,backgroundColor:RA,tension:0.4,fill:true,pointRadius:3},{label:'Score vs Latency (÷50ms)',data:[88,87,86,84,81,77,72,65,55,42,28],borderColor:GOLD,backgroundColor:GA,tension:0.4,fill:false,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x,title:{display:true,text:'Degradation Level',color:'#254a62'}},y:{...commonScales.y,min:0,max:100,title:{display:true,text:'Score (%)',color:'#254a62'}}}}});
+}
+
+/* ── Agentic ── */
+function initAgent() {
+  dc('agent');
+  C.agent = new Chart(document.getElementById('ch-agent'),{type:'bar',data:{labels:['Task Completion','Tool Precision','Decision Quality','Safety Score','Efficiency'],datasets:[{label:'GPT-4o',data:[91,88,85,96,79],backgroundColor:BA,borderColor:BLUE,borderWidth:1},{label:'Claude-3.5',data:[89,90,88,98,82],backgroundColor:JA,borderColor:JADE,borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:70,max:100}}}});
+}
+
+/* ── Adversarial ── */
+function initAdv() {
+  dc('adv');
+  C.adv = new Chart(document.getElementById('ch-adv'),{type:'bar',data:{labels:['GPT-4o','Claude-3.5','Gemini','Llama-3.1','Mistral'],datasets:[{label:'Robustness',data:[97.2,98.1,94.8,91.4,88.9],backgroundColor:[JADE+'44',JADE+'44',BLUE+'44',GOLD+'44',RED+'44'],borderColor:[JADE,JADE,BLUE,GOLD,RED],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{...commonScales.x},y:{...commonScales.y,min:80,max:100}}}});
+}
+
+/* ── Multimodal ── */
+function initMM() {
+  dc('mm');
+  C.mm = new Chart(document.getElementById('ch-mm'),{type:'radar',data:{labels:['Video QA','Audio ASR','Image VQA','Doc OCR','Cross-Modal','Audio-Visual'],datasets:[{label:'GPT-4o',data:[78,82,91,88,76,74],borderColor:BLUE,backgroundColor:BA,pointBackgroundColor:BLUE,pointRadius:3},{label:'Gemini Pro',data:[85,79,88,84,82,80],borderColor:VIO,backgroundColor:VIO+'22',pointBackgroundColor:VIO,pointRadius:3},{label:'Claude-3.5',data:[72,88,90,92,78,70],borderColor:JADE,backgroundColor:JA,pointBackgroundColor:JADE,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,padding:10,color:'#4e7c9a'}}},scales:{r:{grid:{color:gridColor},angleLines:{color:gridColor},pointLabels:{color:'#4e7c9a'},min:60,max:100,ticks:{display:false}}}}});
+}
+
+/* ═══════════════════════════════════════
+   DDIL CONTROLS
+═══════════════════════════════════════ */
+function updDDIL() {
+  const lat=document.getElementById('rng-lat').value;
+  const lss=document.getElementById('rng-loss').value;
+  const bw =document.getElementById('rng-bw').value;
+  const jit=document.getElementById('rng-jit').value;
+  document.getElementById('sv-lat').textContent=lat;
+  document.getElementById('sv-loss').textContent=lss+'%';
+  document.getElementById('sv-bw').textContent=bw+'%';
+  document.getElementById('sv-jit').textContent=jit;
+}
+function ddPreset(n) {
+  const P={contested:{lat:300,loss:5,bw:70,jit:50},blackout:{lat:2400,loss:35,bw:10,jit:200},satcom:{lat:650,loss:12,bw:45,jit:80},baseline:{lat:0,loss:0,bw:100,jit:0}};
+  const p=P[n];
+  ['lat','loss','bw','jit'].forEach((k,i)=>{ const keys=['lat','loss','bw','jit']; document.getElementById('rng-'+k).value=p[keys[i]||k]; });
+  document.getElementById('rng-lat').value=p.lat;
+  document.getElementById('rng-loss').value=p.loss;
+  document.getElementById('rng-bw').value=p.bw;
+  document.getElementById('rng-jit').value=p.jit;
+  updDDIL();
+  document.getElementById('dd-mode').textContent=n.toUpperCase();
+  document.getElementById('dd-lat').textContent=p.lat+'ms';
+  document.getElementById('dd-loss').textContent=p.loss+'%';
+  document.getElementById('dd-bw').textContent=p.bw+'%';
+  document.getElementById('dd-pipe-st').textContent=p.lat>500?'SEVERELY DEGRADED':p.lat>200?'DEGRADED':p.lat>0?'CONTESTED':'Full bandwidth';
+  document.getElementById('dd-model-st').textContent=p.loss>20?'STRESSED':p.loss>5?'DEGRADED':'NOMINAL';
+}
+function startDDIL() {
+  const lat=document.getElementById('rng-lat').value;
+  const lss=document.getElementById('rng-loss').value;
+  const bw=document.getElementById('rng-bw').value;
+  document.getElementById('dd-mode').textContent=lat>500?'BLACKOUT':lat>200?'DEGRADED':'CONTESTED';
+  document.getElementById('dd-lat').textContent=lat+'ms';
+  document.getElementById('dd-loss').textContent=lss+'%';
+  document.getElementById('dd-bw').textContent=bw+'%';
+  alert(`DDIL Simulation Started\n\nLatency: ${lat}ms  |  Loss: ${lss}%  |  Bandwidth: ${bw}%\n\nModel evaluation will execute under these conditions.\nAudit log initiated.`);
+}
+function resetDDIL() { ddPreset('baseline'); }
+
+/* ═══════════════════════════════════════
+   MULTIMODAL
+═══════════════════════════════════════ */
+function setMM(btn) {
+  document.querySelectorAll('.mm-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  initDash();
+  initCollapsePanels();
+  initCollapseSections();
+});
+
+function initCollapseSections() {
+  // Find every .sec element and group it with its following siblings
+  document.querySelectorAll('.sec').forEach(sec => {
+    const parent = sec.parentNode;
+
+    // Collect all following siblings until the next .sec or end
+    const siblings = [];
+    let node = sec.nextSibling;
+    while (node) {
+      const next = node.nextSibling;
+      // Stop if we hit another .sec element
+      if (node.nodeType === 1 && node.classList && node.classList.contains('sec')) break;
+      siblings.push(node);
+      node = next;
+    }
+
+    // Skip if no content follows
+    if (siblings.length === 0) return;
+
+    // Create the wrapper group
+    const group = document.createElement('div');
+    group.className = 'sec-group';
+
+    // Wrap the sec label text for styling
+    const labelText = sec.textContent.trim();
+    sec.innerHTML = `<span class="sec-chevron"><svg viewBox="0 0 8 8" fill="none"><polyline points="1,2.5 4,5.5 7,2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="sec-label-text">${labelText}</span>`;
+
+    // Wrap body content
+    const body = document.createElement('div');
+    body.className = 'sec-body';
+    siblings.forEach(s => body.appendChild(s));
+
+    // Assemble group: sec header + body
+    parent.insertBefore(group, sec);
+    group.appendChild(sec);
+    group.appendChild(body);
+
+    // Toggle on click
+    sec.addEventListener('click', () => {
+      group.classList.toggle('collapsed');
+    });
+  });
+}
+
+function initCollapsePanels() {
+  document.querySelectorAll('.panel').forEach(panel => {
+    // Make sure panel is position:relative for absolute button placement
+    panel.style.position = 'relative';
+
+    // Inject collapse button
+    const btn = document.createElement('button');
+    btn.className = 'panel-collapse-btn';
+    btn.title = 'Minimise';
+    btn.innerHTML = `<svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline points="2,3.5 5,6.5 8,3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    panel.appendChild(btn);
+
+    // Wrap all children except the button in a panel-body div
+    const children = Array.from(panel.childNodes).filter(n => n !== btn);
+    const body = document.createElement('div');
+    body.className = 'panel-body';
+    children.forEach(child => body.appendChild(child));
+    panel.insertBefore(body, btn);
+
+    btn.addEventListener('click', () => {
+      panel.classList.toggle('collapsed');
+      btn.title = panel.classList.contains('collapsed') ? 'Expand' : 'Minimise';
+    });
+  });
+}
+</script>
+</body>
+</html>
