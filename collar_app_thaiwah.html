@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collar AI · Formulation Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f7;--panel:#ffffff;--panel2:#f0f1f4;--panel3:#e6e8ed;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.15);
+  --green:#00956b;--gd:rgba(0,149,107,0.08);--gm:rgba(0,149,107,0.28);
+  --amber:#c47d00;--ad:rgba(196,125,0,0.08);--am:rgba(196,125,0,0.28);
+  --red:#c0392b;--rd:rgba(192,57,43,0.07);--rm:rgba(192,57,43,0.28);
+  --blue:#1a6fb5;--bd:rgba(26,111,181,0.08);--bm:rgba(26,111,181,0.28);
+  --t:#131720;--t2:rgba(19,23,32,0.55);--t3:rgba(19,23,32,0.32);
+  --mono:'DM Mono',monospace;--body:'DM Sans',sans-serif;--disp:'Syne',sans-serif;--num:'Space Grotesk',sans-serif;
+  --sh:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.05)
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--t);font-family:var(--body);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.14);border-radius:4px}
+*{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.12) transparent}
+/* TOAST */
+#tw{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:#fff;border:1px solid var(--border2);padding:10px 15px;border-radius:8px;font-size:12px;color:var(--t);display:flex;align-items:center;gap:8px;box-shadow:var(--sh);animation:tin .22s ease;max-width:260px}
+.toast.out{animation:tout .18s ease forwards}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tout{to{opacity:0;transform:translateY(5px)}}
+/* MODAL */
+#ov{position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.35);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
+#ov.open{display:flex}
+.mbox{background:#fff;border:1px solid var(--border2);border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:var(--sh);animation:min .18s ease}
+@keyframes min{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:none}}
+/* TOPBAR */
+.topbar{height:52px;flex-shrink:0;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:0;z-index:50}
+.logo{display:flex;align-items:center;gap:4px;margin-right:18px;flex-shrink:0}
+.llogo{height:32px;width:auto;display:block}
+.lname{font-family:var(--disp);font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--t)}
+.vd{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 10px}
+.ttabs{display:flex;gap:2px}
+.ttab{padding:7px 13px;border-radius:6px;border:none;background:none;font-size:12px;font-weight:500;color:var(--t3);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px;font-family:var(--body)}
+.ttab:hover{background:var(--panel2);color:var(--t2)}
+.ttab.on{background:var(--gd);color:var(--green);font-weight:600}
+.tr{margin-left:auto;display:flex;align-items:center;gap:9px}
+.lb{font-family:var(--mono);font-size:10px;color:var(--t3);padding:5px 9px;border-radius:4px;border:1px solid var(--border);display:flex;align-items:center;gap:6px;background:var(--bg)}
+.ld{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2.5s ease infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ib{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ib:hover{border-color:var(--border2);background:var(--panel2);color:var(--t)}
+.rbtn{background:var(--green);color:#fff;font-weight:600;font-size:12px;padding:8px 18px;border-radius:6px;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;font-family:var(--body);white-space:nowrap;letter-spacing:.01em}
+.rbtn:hover{background:#007a58;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,149,107,0.3)}
+.rbtn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.sp{width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* VIEWS */
+.view{display:none;flex:1;overflow:hidden}
+.view.on{display:flex}
+#vF.on{display:grid;grid-template-columns:265px 1fr 340px}
+/* LIBRARY */
+.lib{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:12px 13px 10px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fafbfc}
+.pl{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px}
+.sw{position:relative;margin-bottom:9px}
+.sw input{width:100%;background:#fff;border:1px solid var(--border);border-radius:6px;padding:7px 9px 7px 30px;font-size:12px;color:var(--t);outline:none;transition:border-color .15s;font-family:var(--body);box-shadow:inset 0 1px 2px rgba(0,0,0,0.04)}
+.sw input:focus{border-color:var(--gm);box-shadow:0 0 0 3px var(--gd)}
+.sw input::placeholder{color:var(--t3)}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;pointer-events:none}
+.cats{display:flex;gap:5px;flex-wrap:wrap}
+.cp{font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--border);color:var(--t3);cursor:pointer;transition:all .15s;background:#fff;font-family:var(--body)}
+.cp.on{border-color:var(--gm);color:var(--green);background:var(--gd);font-weight:600}
+.cp:not(.on):hover{color:var(--t2);background:var(--panel2)}
+.lb2{flex:1;overflow-y:auto;padding:7px;background:#fff}
+.iglbl{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;padding:9px 8px 4px}
+.ii{display:flex;align-items:center;gap:9px;padding:9px;border-radius:7px;cursor:pointer;border:1px solid transparent;transition:all .15s;margin-bottom:2px}
+.ii:hover{background:var(--panel2);border-color:var(--border)}
+.ii.added{background:var(--gd);border-color:var(--gm)}
+.idot{width:8px;height:8px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;transition:all .15s}
+.ii.added .idot{background:var(--green);border-color:var(--green)}
+.ii-info{flex:1;min-width:0}
+.iin{font-weight:500;font-size:12px;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iim{font-size:10px;color:var(--t3);margin-top:1px}
+.iib{width:20px;height:20px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--t3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.ii:hover .iib{border-color:var(--border)}
+.iib:hover{background:var(--panel3)!important;color:var(--t)!important;border-color:var(--border2)!important}
+/* CANVAS — graph paper background */
+.cv{background:var(--bg);display:flex;flex-direction:column;overflow:hidden;
+  background-image:linear-gradient(rgba(0,149,107,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,149,107,0.06) 1px,transparent 1px);
+  background-size:24px 24px}
+.ch{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px)}
+.rni{background:transparent;border:none;outline:none;font-family:var(--disp);font-size:16px;font-weight:700;color:var(--t);border-bottom:1px dashed var(--border2);padding-bottom:1px;min-width:180px;transition:border-color .15s}
+.rni:focus{border-bottom-color:var(--green)}
+.cmt{font-family:var(--mono);font-size:10px;color:var(--t3)}
+.ca2{margin-left:auto;display:flex;gap:6px}
+.cbody{flex:1;overflow-y:auto;padding:14px}
+.es{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.ei{width:72px;height:72px;border-radius:50%;border:2px dashed rgba(0,149,107,0.25);display:flex;align-items:center;justify-content:center;font-size:26px;animation:fl 3s ease-in-out infinite;background:rgba(255,255,255,0.8)}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.et{font-family:var(--disp);font-size:15px;font-weight:700;color:var(--t2)}
+.eh{font-size:12px;color:var(--t3);line-height:1.75;max-width:220px}
+.eh strong{color:var(--green)}
+.lhdr{display:grid;grid-template-columns:1fr 118px 58px 28px;gap:8px;padding:0 12px 7px;font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:7px}
+.rrow{display:grid;grid-template-columns:1fr 118px 58px 28px;gap:8px;align-items:center;padding:9px 12px;border-radius:7px;margin-bottom:4px;background:#fff;border:1px solid var(--border);transition:all .15s;animation:ri .17s ease;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.rrow:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,0.07)}
+@keyframes ri{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+.rn{font-weight:500;font-size:12px}
+.rm{font-size:10px;color:var(--t3);margin-top:1px}
+.qc{display:flex;align-items:center;gap:4px}
+.qb{width:21px;height:21px;border-radius:4px;border:1px solid var(--border);background:#fff;color:var(--t2);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;flex-shrink:0}
+.qb:hover{border-color:var(--gm);color:var(--green);background:var(--gd)}
+.qi{width:44px;text-align:center;background:#fff;border:1px solid var(--border);border-radius:4px;padding:4px;font-family:var(--mono);font-size:11px;color:var(--t);outline:none;transition:border-color .15s;box-shadow:inset 0 1px 2px rgba(0,0,0,0.04)}
+.qi:focus{border-color:var(--gm);box-shadow:0 0 0 2px var(--gd)}
+.pc{display:flex;align-items:center;gap:5px}
+.pb{flex:1;height:4px;background:var(--panel3);border-radius:2px;overflow:hidden}
+.pbf{height:100%;border-radius:2px;background:var(--green);transition:width .4s ease}
+.pn{font-family:var(--mono);font-size:9px;color:var(--t3);width:24px;text-align:right}
+.db{width:24px;height:24px;border-radius:5px;border:1px solid transparent;background:transparent;color:var(--t3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.db:hover{background:var(--rd);border-color:var(--rm);color:var(--red)}
+.cf{padding:11px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:20px;background:rgba(255,255,255,0.92);backdrop-filter:blur(8px)}
+.fs .fl{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
+.fs .fv{font-family:var(--num);font-size:17px;font-weight:700;letter-spacing:0.02em}
+.fv.ok{color:var(--green)}.fv.wn{color:var(--amber)}.fv.bd{color:var(--red)}
+.fh{margin-left:auto;font-size:11px;color:var(--t3)}
+/* ANALYSIS */
+.ap{background:#fafbfc;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.ah{padding:12px 14px 10px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;background:#fff}
+.at{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase}
+.ab{flex:1;overflow-y:auto;padding:13px}
+.aph{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:18px}
+.aphi{font-size:30px;opacity:.4}
+.apht{font-size:12px;color:var(--t3);line-height:1.85}
+.apht strong{color:var(--green)}
+.asec{margin-bottom:16px}
+.ast{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.ast::after{content:'';flex:1;height:1px;background:var(--border)}
+.sr{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.sn{font-family:var(--num);font-size:50px;font-weight:700;line-height:1;transition:color .4s;letter-spacing:0.02em}
+.sg{font-family:var(--mono);font-size:11px;letter-spacing:.05em;margin-bottom:1px}
+.ss{font-size:10px;color:var(--t3)}
+.srat{font-size:12px;color:var(--t2);line-height:1.7;padding:9px 11px;background:#fff;border:1px solid var(--border);border-radius:6px}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pcard{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.plbl{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.pval{font-family:var(--num);font-size:13px;font-weight:700;margin-bottom:4px;letter-spacing:0.01em}
+.pbar{height:3px;background:var(--panel3);border-radius:2px;overflow:hidden}
+.pbf2{height:100%;border-radius:2px;transition:width .8s ease}
+.cb{font-family:var(--num);font-size:24px;font-weight:700;margin-bottom:10px;letter-spacing:0.02em}
+.cb span{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--t3)}
+.cr2{display:flex;flex-direction:column;gap:6px}
+.c2r{display:flex;align-items:center;gap:7px}
+.c2rn{font-size:11px;color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c2rb{width:64px;height:4px;background:var(--panel3);border-radius:3px;overflow:hidden;flex-shrink:0}
+.c2rf{height:100%;border-radius:3px;transition:width .6s ease}
+.c2rp{font-family:var(--mono);font-size:9px;color:var(--t3);width:24px;text-align:right}
+.rlist{display:flex;flex-direction:column;gap:6px}
+.rec{font-size:12px;color:var(--t2);line-height:1.65;padding:9px 11px;border-radius:6px;background:#fff;border:1px solid var(--border);border-left:2px solid var(--green)}
+.rec.warn{border-left-color:var(--amber)}
+.rec.ins{border-left-color:var(--blue)}
+.verd{background:#fff;border:1px solid var(--border);border-radius:7px;padding:12px;font-size:12px;color:var(--t2);line-height:1.75}
+.ls{padding:16px 0;display:flex;flex-direction:column;gap:9px}
+.lstep{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--t3);transition:color .3s}
+.lstep.done{color:var(--green)}.lstep.cur{color:var(--t)}
+.lstep-ic{width:17px;height:17px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;transition:all .3s}
+.lstep.done .lstep-ic{background:var(--gd);border-color:var(--gm);color:var(--green)}
+/* ANALYTICS */
+#vA.on{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.agrid{flex:1;overflow-y:auto;padding:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-content:start}
+.ac{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.ac.w2{grid-column:span 2}
+.ac.w3{grid-column:1/-1}
+.act{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
+.bc{display:flex;flex-direction:column;gap:9px}
+.bcr{display:flex;align-items:center;gap:9px}
+.bcrl{font-size:11px;color:var(--t2);width:105px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcrt{flex:1;height:7px;background:var(--panel3);border-radius:4px;overflow:hidden}
+.bcrf{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+.bcrv{font-family:var(--mono);font-size:10px;color:var(--t3);width:32px;text-align:right}
+.dw{display:flex;align-items:center;gap:18px}
+.dl{display:flex;flex-direction:column;gap:7px}
+.dlr{display:flex;align-items:center;gap:7px}
+.dld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dll{font-size:11px;color:var(--t2)}
+.dlp{font-family:var(--mono);font-size:10px;color:var(--t3);margin-left:6px}
+/* COLAB */
+#vC.on{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.clw{flex:1;display:grid;grid-template-columns:1fr 320px;overflow:hidden}
+.clm{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.clhd{padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;gap:10px;background:#fff}
+.cltt{font-family:var(--disp);font-size:17px;font-weight:700}
+.clb{flex:1;overflow-y:auto;padding:18px;background:var(--bg)}
+.slist{display:flex;flex-direction:column;gap:9px}
+.sc{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:all .15s;animation:ri .18s ease;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.sc:hover{border-color:var(--border2);box-shadow:0 3px 10px rgba(0,0,0,0.08)}
+.sci{width:38px;height:38px;border-radius:8px;background:var(--gd);border:1px solid var(--gm);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.scn{font-family:var(--disp);font-size:13px;font-weight:700;margin-bottom:2px}
+.scm{font-size:11px;color:var(--t3)}
+.scr{margin-left:auto;display:flex;align-items:center;gap:7px}
+.sbg{font-family:var(--disp);font-size:15px;font-weight:800;padding:5px 10px;border-radius:5px;border:1px solid}
+.cls{display:flex;flex-direction:column;overflow:hidden;background:#fff;border-left:1px solid var(--border)}
+.csh{padding:10px 14px;font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--border);background:#fafbfc}
+.plist{padding:6px 12px 10px}
+.prow{display:flex;align-items:center;gap:9px;padding:7px 0}
+.pav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pn2{flex:1;font-size:12px;color:var(--t2)}
+.ps{font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:3px}
+.on2{background:var(--gd);color:var(--green);border:1px solid var(--gm)}
+.aw{background:var(--ad);color:var(--amber);border:1px solid var(--am)}
+.feed{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;background:#fafbfc}
+.fact{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--border)}
+.fact:last-child{border-bottom:none}
+.fav{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.ftxt{font-size:11px;color:var(--t2);line-height:1.5}
+.ftime{font-family:var(--mono);font-size:9px;color:var(--t3);margin-top:2px}
+/* CHIPS */
+.chip{display:inline-block;font-family:var(--mono);font-size:9px;padding:3px 7px;border-radius:3px}
+.cg{background:var(--gd);color:var(--green);border:1px solid var(--gm)}
+.ca{background:var(--ad);color:var(--amber);border:1px solid var(--am)}
+.cr{background:var(--rd);color:var(--red);border:1px solid var(--rm)}
+.cb2{background:var(--bd);color:var(--blue);border:1px solid var(--bm)}
+/* BTNS */
+.bsm{padding:7px 13px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--t2);cursor:pointer;font-size:11px;transition:all .15s;font-family:var(--body)}
+.bsm:hover{border-color:var(--border2);color:var(--t);background:var(--panel2)}
+.bsm.bp{background:var(--green);color:#fff;border-color:transparent;font-weight:600}
+.bsm.bp:hover{background:#007a58}
+.bsm.bd2{border-color:var(--rm);color:var(--red)}
+.bsm.bd2:hover{background:var(--rd)}
+/* EXAMPLES */
+.ex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:680px;margin-top:10px}
+.ex-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 15px;cursor:pointer;transition:all .18s;text-align:left;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05)}
+.ex-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gd),transparent);opacity:0;transition:opacity .18s}
+.ex-card:hover{border-color:var(--gm);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,149,107,0.12)}
+.ex-card:hover::before{opacity:1}
+.ex-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ex-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ex-score{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:3px}
+.ex-name{font-family:var(--disp);font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.2;color:var(--t)}
+.ex-desc{font-size:11px;color:var(--t3);line-height:1.55;margin-bottom:10px}
+.ex-tags{display:flex;gap:5px;flex-wrap:wrap}
+.ex-tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;border:1px solid var(--border);color:var(--t3)}
+.ex-footer{margin-top:9px;padding-top:8px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ex-ing-count{font-family:var(--mono);font-size:9px;color:var(--t3)}
+.ex-load{font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:.05em;font-weight:600}
+.es-or{font-family:var(--mono);font-size:10px;color:var(--t3);letter-spacing:.1em;margin:14px 0 2px;display:flex;align-items:center;gap:10px;width:100%;max-width:680px}
+.es-or::before,.es-or::after{content:'';flex:1;height:1px;background:var(--border)}
+/* SUBSTITUTIONS DRAWER */
+.sub-drawer{border-top:1px solid var(--border);flex-shrink:0;background:#fffdf7;max-height:220px;overflow-y:auto;transition:max-height .3s ease}
+.sub-drawer.hidden{max-height:0;overflow:hidden;border-top:none}
+.sub-head{display:flex;align-items:center;gap:8px;padding:9px 16px;border-bottom:1px solid rgba(196,125,0,0.12);position:sticky;top:0;background:#fffdf7;z-index:1}
+.sub-head-title{font-family:var(--mono);font-size:9px;color:var(--amber);letter-spacing:.12em;text-transform:uppercase;font-weight:500}
+.sub-head-count{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;background:var(--ad);color:var(--amber);border:1px solid var(--am)}
+.sub-list{display:flex;flex-direction:column;gap:0}
+.sub-row{display:grid;grid-template-columns:1fr auto 1fr auto;gap:0;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(0,0,0,0.04)}
+.sub-row:last-child{border-bottom:none}
+.sub-row:hover{background:rgba(196,125,0,0.04)}
+.sub-from{min-width:0}
+.sub-from-name{font-size:12px;font-weight:500;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-from-co2{font-family:var(--mono);font-size:9px;color:var(--red)}
+.sub-arrow{font-size:11px;color:var(--t3);padding:0 12px;flex-shrink:0}
+.sub-to{min-width:0}
+.sub-to-name{font-size:12px;font-weight:500;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sub-to-co2{font-family:var(--mono);font-size:9px;color:var(--green)}
+.sub-swap-btn{font-family:var(--mono);font-size:10px;padding:5px 11px;border-radius:4px;border:1px solid var(--gm);color:var(--green);background:var(--gd);cursor:pointer;transition:all .15s;white-space:nowrap;margin-left:12px;font-weight:500}
+.sub-swap-btn:hover{background:var(--green);color:#fff;border-color:var(--green)}
+/* RD TIMELINE */
+.rd-phases{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.rd-phase{display:flex;align-items:center;gap:10px}
+.rd-phase-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:2px solid}
+.rd-phase-line{position:relative;flex:1;height:6px;background:var(--panel3);border-radius:3px;overflow:hidden}
+.rd-phase-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.rd-phase-label{font-size:11px;color:var(--t2);width:90px;flex-shrink:0}
+.rd-phase-weeks{font-family:var(--mono);font-size:10px;color:var(--t3);width:44px;text-align:right;flex-shrink:0}
+/* COST TABLE */
+.cost-table{width:100%;border-collapse:collapse;font-size:11px}
+.cost-table td{padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);color:var(--t2)}
+.cost-table tr:last-child td{border-bottom:none;font-weight:600;color:var(--t)}
+.cost-table td:last-child{font-family:var(--mono);text-align:right;color:var(--t)}
+.cost-highlight{font-family:var(--num);font-size:28px;font-weight:700;line-height:1;color:var(--t);margin-bottom:4px;letter-spacing:0.02em}
+.cost-sub{font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div id="tw"></div>
+<div id="ov"><div class="mbox" id="mb"></div></div>
+<div class="topbar">
+  <div class="logo"><img src="logo.png" class="llogo" alt="logo"><div class="lname">Collar AI</div></div>
+  <div class="vd"></div>
+  <div class="ttabs">
+    <button class="ttab on" onclick="goTab('F',this)">⚗️ Formulation</button>
+    <button class="ttab" onclick="goTab('A',this)">📊 Analytics</button>
+    <button class="ttab" onclick="goTab('C',this)">🤝 Co-Innovation</button>
+  </div>
+  <div class="tr">
+    <div class="lb"><div class="ld"></div>AI Engine · Ready</div>
+    <div class="vd"></div>
+    <button class="ib" title="Clear formulation" onclick="clearAll()">🗑</button>
+    <button class="ib" title="Save formulation" onclick="saveF()">💾</button>
+    <button class="rbtn" id="rb" onclick="runAI()"><span id="rl">▶ Run Analysis</span></button>
+  </div>
+</div>
+<!-- FORMULATION -->
+<div class="view on" id="vF">
+  <div class="lib">
+    <div class="ph">
+      <div class="pl">Ingredient Library · <span id="libN">15</span></div>
+      <div class="sw"><span class="si">⌕</span><input id="si2" type="text" placeholder="Search ingredients…" oninput="renderLib()"></div>
+      <div class="cats">
+        <button class="cp on" onclick="setCat('all',this)">All</button>
+        <button class="cp" onclick="setCat('protein',this)">Protein</button>
+        <button class="cp" onclick="setCat('fiber',this)">Fiber</button>
+        <button class="cp" onclick="setCat('fat',this)">Fat</button>
+        <button class="cp" onclick="setCat('novel',this)">Novel</button>
+        <button class="cp" onclick="setCat('starch',this)">Starch</button>
+      </div>
+    </div>
+    <div class="lb2" id="libB"></div>
+  </div>
+  <div class="cv">
+    <div class="ch">
+      <input class="rni" id="rni" type="text" value="Untitled Formulation" maxlength="50">
+      <span class="cmt" id="cmt">0 ingredients</span>
+      <div class="ca2"><button class="ib" title="Sort by quantity" onclick="sortR()">↕</button></div>
+    </div>
+    <div class="cbody" id="cbody"></div>
+    <div class="sub-drawer hidden" id="subDrawer"></div>
+    <div class="cf">
+      <div class="fs"><div class="fl">Total Mass</div><div class="fv" id="fT">0 g</div></div>
+      <div class="vd"></div>
+      <div class="fs"><div class="fl">Count</div><div class="fv" id="fC">0</div></div>
+      <div class="vd"></div>
+      <div class="fs"><div class="fl">Avg CO₂</div><div class="fv" id="fO">—</div></div>
+      <div class="fh" id="fh">Add ingredients to begin →</div>
+    </div>
+  </div>
+  <div class="ap">
+    <div class="ah"><div class="at">AI Analysis Results</div><span class="chip cg" id="ast" style="display:none">Done</span></div>
+    <div class="ab" id="ab">
+      <div class="aph"><div class="aphi">✦</div><div class="apht">Build your formulation,<br>then press<br><strong>▶ Run Analysis</strong><br><br>You'll get:<br>• Sustainability score<br>• Functional properties<br>• Carbon breakdown<br>• Expert recommendations</div></div>
+    </div>
+  </div>
+</div>
+<!-- ANALYTICS -->
+<div class="view" id="vA"><div class="agrid" id="ag"><div class="ac w3"><div class="aph" style="height:auto;padding:40px 0"><div class="aphi">📊</div><div class="apht" style="font-size:13px">Add ingredients in <strong>Formulation</strong> to see live charts here.</div></div></div></div></div>
+<!-- CO-INNOV -->
+<div class="view" id="vC">
+  <div class="clw">
+    <div class="clm">
+      <div class="clhd"><span style="font-size:19px">🤝</span><div class="cltt">Shared Formulations</div><span class="chip cg" id="cn">0 saved</span><button class="ib" style="margin-left:auto" onclick="toast('Build and save formulations to share here','💡')">ℹ️</button></div>
+      <div class="clb" id="cb2"><div class="aph" style="height:100%"><div class="aphi">📂</div><div class="apht">No saved formulations yet.<br>Build a recipe and press <strong>💾 Save</strong>.</div></div></div>
+    </div>
+    <div class="cls">
+      <div class="csh">Active Partners</div>
+      <div class="plist">
+        <div class="prow"><div class="pav" style="background:#6366f1">TW</div><div class="pn2">Thai Wah R&D</div><span class="ps on2">Online</span></div>
+        <div class="prow"><div class="pav" style="background:#0ea5e9">AQ</div><div class="pn2">AquaFarms Inc.</div><span class="ps on2">Online</span></div>
+        <div class="prow"><div class="pav" style="background:#f59e0b">DJ</div><div class="pn2">DAJ Extractomics</div><span class="ps aw">Away</span></div>
+        <div class="prow"><div class="pav" style="background:#10b981">GF</div><div class="pn2">GreenFerm Labs</div><span class="ps aw">Away</span></div>
+      </div>
+      <div class="csh">Activity Feed</div>
+      <div class="feed" id="fd">
+        <div class="fact"><div class="fav" style="background:#6366f1;color:#fff">TW</div><div><div class="ftxt">Thai Wah R&D session started. Collar AI online.</div><div class="ftime">Just now</div></div></div>
+        <div class="fact"><div class="fav" style="background:#0ea5e9;color:#fff">AQ</div><div><div class="ftxt">AquaFarms updated Algae Protein spec. CO₂ data refreshed.</div><div class="ftime">2 min ago</div></div></div>
+        <div class="fact"><div class="fav" style="background:#10b981;color:#fff">GF</div><div><div class="ftxt">GreenFerm Labs added new Fungal Mycoprotein batch data.</div><div class="ftime">18 min ago</div></div></div>
+        <div class="fact"><div class="fav" style="background:#f59e0b;color:#fff">DJ</div><div><div class="ftxt">DAJ Extractomics submitted updated LCA for Cijber Extract.</div><div class="ftime">1 hr ago</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const INGS=[
+  {id:'spi',name:'Soy Protein Isolate',cat:'protein',protein:90,fiber:1,fat:2,co2:0.8,cc:'g',cost:3.50,rdWeeks:0,subs:['alp','pea'],desc:'High-purity 90% protein isolate. Excellent emulsification and gelation. ISO 14001 certified suppliers available.',tags:['ISO 14001','High solubility','Gelling']},
+  {id:'pea',name:'Pea Protein Concentrate',cat:'protein',protein:75,fiber:5,fat:3,co2:0.6,cc:'g',cost:4.00,rdWeeks:0,subs:['alp','ric'],desc:'75% protein, low allergenicity. Mild earthy flavour. Pair with rice protein for complete amino acid profile.',tags:['Allergen-free','Pairs with rice']},
+  {id:'fun',name:'Fungal Mycoprotein',cat:'protein',protein:50,fiber:25,fat:4,co2:0.9,cc:'g',cost:12.00,rdWeeks:3,subs:['pea','alp'],desc:'Fermentation-derived protein with fibrous texture ideal for meat analogs. Dual protein+fiber source.',tags:['Meat analog','Fermented','Dual source']},
+  {id:'alp',name:'Algae Protein',cat:'protein',protein:60,fiber:8,fat:10,co2:0.5,cc:'g',cost:15.00,rdWeeks:3,subs:[],desc:'Complete amino acid profile. Micronutrient-rich. Lowest CO₂ footprint protein in the library. Marine note.',tags:['Complete AAs','Lowest CO₂','Omega-3']},
+  {id:'cas',name:'Precision Fermentation Casein',cat:'protein',protein:85,fiber:0,fat:1,co2:1.1,cc:'a',cost:28.00,rdWeeks:6,subs:['spi','pea'],desc:'Animal-free dairy-equivalent casein. Best-in-class emulsification and melt properties. Premium cost.',tags:['Dairy-free','Premium','Best emulsification']},
+  {id:'ric',name:'Rice Protein',cat:'protein',protein:70,fiber:3,fat:1,co2:0.7,cc:'g',cost:3.20,rdWeeks:0,subs:['alp'],desc:'Hypoallergenic, neutral flavour. Complements pea protein for full BCAA profile. Good water solubility.',tags:['Hypoallergenic','Neutral flavour']},
+  {id:'pef',name:'Pea Fiber',cat:'fiber',protein:2,fiber:75,fat:0.5,co2:0.3,cc:'g',cost:2.50,rdWeeks:0,subs:[],desc:'75% dietary fiber with exceptional water absorption (8× own weight). Gelling agent. Lowest CO₂ in library.',tags:['Water absorption','Gelling','Lowest CO₂']},
+  {id:'oat',name:'Oat Beta-Glucan',cat:'fiber',protein:5,fiber:70,fat:2,co2:0.4,cc:'g',cost:8.00,rdWeeks:1,subs:['pef'],desc:'Clinically proven cholesterol-lowering claims (EFSA). Strong viscosity-building and binding properties.',tags:['Health claim','Viscosity','Soluble']},
+  {id:'psy',name:'Psyllium Husk',cat:'fiber',protein:3,fiber:85,fat:0.5,co2:0.7,cc:'g',cost:5.00,rdWeeks:1,subs:['pef','oat'],desc:'Highest fiber at 85%. Superior water retention and gel strength. Slight colour impact (off-white).',tags:['Highest fiber','Strong gel','Colour note']},
+  {id:'alo',name:'Algal Oil',cat:'fat',protein:0,fiber:0,fat:95,co2:1.2,cc:'a',cost:18.00,rdWeeks:3,subs:['sun'],desc:'Omega-3 DHA/EPA-rich marine oil. Excellent nutritional positioning. Requires antioxidant co-formulation.',tags:['Omega-3 DHA','Marine','Antioxidant needed']},
+  {id:'sun',name:'Sunflower Oil (High Oleic)',cat:'fat',protein:0,fiber:0,fat:99,co2:0.8,cc:'g',cost:2.80,rdWeeks:0,subs:[],desc:'High oleic variant with excellent shelf stability and neutral flavour. Versatile carrier oil.',tags:['Neutral flavour','Shelf stable','Versatile']},
+  {id:'coc',name:'Fractionated Coconut Fat',cat:'fat',protein:0,fiber:0,fat:99,co2:1.5,cc:'r',cost:3.50,rdWeeks:1,subs:['sun'],desc:'Sharp melt point delivers satisfying fat bite. High saturated fat. Recommend using below 8%.',tags:['Sharp melt','High sat fat','Use <8%']},
+  {id:'leu',name:'L-Leucine (BCAA)',cat:'novel',protein:100,fiber:0,fat:0,co2:2.1,cc:'r',cost:22.00,rdWeeks:5,subs:['lac'],desc:'Branched-chain amino acid for anabolic signalling. Sports nutrition use. High CO₂ cost of synthesis.',tags:['Sports nutrition','Anabolic','High CO₂']},
+  {id:'lac',name:'Lactobacillus Ferment',cat:'novel',protein:8,fiber:0,fat:1,co2:0.4,cc:'g',cost:35.00,rdWeeks:4,subs:[],desc:'Postbiotic ferment for gut health signalling and flavour development. Use at 0.5–3% in functional foods.',tags:['Postbiotic','Gut health','Flavour dev.']},
+  {id:'cij',name:'Cijber Extract',cat:'novel',protein:4,fiber:3,fat:0,co2:0.4,cc:'g',cost:45.00,rdWeeks:4,subs:[],desc:'Novel functional extract with binding and emulsification properties. EU regulatory clearance. Emerging.',tags:['Novel','Emulsification','EU cleared']},
+  {id:'tps',name:'Tapioca Starch',cat:'starch',protein:0,fiber:1,fat:0,co2:0.35,cc:'g',cost:1.80,rdWeeks:0,subs:['mzs','pos'],desc:'Clean-label, neutral-tasting starch. Excellent freeze-thaw stability and clarity. Widely used as a thickener and texture modifier in plant-based applications.',tags:['Clean label','Freeze-thaw stable','Neutral taste']},
+  {id:'mzs',name:'Maize Starch',cat:'starch',protein:0,fiber:1,fat:0.5,co2:0.42,cc:'g',cost:1.40,rdWeeks:0,subs:['tps','pos'],desc:'Versatile commodity starch. Good gelling and thickening properties. High availability and low cost. Slightly opaque gel formation.',tags:['Commodity','High availability','Gelling']},
+  {id:'pos',name:'Potato Starch',cat:'starch',protein:0,fiber:2,fat:0,co2:0.38,cc:'g',cost:1.60,rdWeeks:0,subs:['tps','mzs'],desc:'High-swelling starch with excellent water-binding capacity. Produces clear gels. Good for viscosity building and as a binder in meat analogs.',tags:['High swelling','Clear gel','Binder']},
+  {id:'peas',name:'Pea Starch',cat:'starch',protein:2,fiber:3,fat:0,co2:0.30,cc:'g',cost:2.20,rdWeeks:0,subs:['tps'],desc:'Low CO₂ starch from pea processing. Clean flavour, good binding. Natural complement to pea protein in allergen-free formulations.',tags:['Low CO₂','Allergen-free','Pea-native']},
+  {id:'rws',name:'Rice Waxy Starch',cat:'starch',protein:1,fiber:1,fat:0,co2:0.50,cc:'g',cost:3.10,rdWeeks:1,subs:['tps','mzs'],desc:'Waxy (high amylopectin) rice starch. Smooth, creamy texture. Excellent shear stability. Preferred in dairy-alternative and sauce applications.',tags:['Waxy','Creamy texture','Shear stable']},
+];
+const CC={g:'cg',a:'ca',r:'cr'};
+const CCOL={g:'var(--green)',a:'var(--amber)',r:'var(--red)'};
+const CATLBL={protein:'Proteins',fiber:'Fibers',fat:'Fats',novel:'Novel Ingredients',starch:'Starches'};
+let activeCat='all',recipe=[],lastResult=null,saved=[];
+
+// ── PRE-BUILT EXAMPLES ──
+const EXAMPLES=[
+  {
+    name:'Plant-Based Protein Shake',
+    icon:'🥤',
+    desc:'A complete, low-carbon protein blend with complementary amino acid profiles — ideal for daily nutrition.',
+    co2:'0.61',
+    score:82,
+    scoreColor:'var(--green)',
+    tags:['High Protein','Low CO₂','Allergen-Free'],
+    recipe:[
+      {id:'pea', qty:400},
+      {id:'ric', qty:250},
+      {id:'pef', qty:100},
+      {id:'sun', qty:50},
+      {id:'lac', qty:20},
+    ]
+  },
+  {
+    name:'Meat Analog Binder',
+    icon:'🍖',
+    desc:'Fibrous mycoprotein base with oat fiber for binding — high texture, good stability, sustainable.',
+    co2:'0.72',
+    score:76,
+    scoreColor:'var(--green)',
+    tags:['Fibrous Texture','Meat Analog','Circular'],
+    recipe:[
+      {id:'fun', qty:350},
+      {id:'spi', qty:200},
+      {id:'oat', qty:150},
+      {id:'pef', qty:100},
+      {id:'sun', qty:40},
+    ]
+  },
+  {
+    name:'High-Performance Sports Blend',
+    icon:'⚡',
+    desc:'Precision casein + BCAA enrichment for anabolic response. Algal DHA for recovery. Premium positioning.',
+    co2:'1.18',
+    score:58,
+    scoreColor:'var(--amber)',
+    tags:['Sports Nutrition','Premium','BCAA'],
+    recipe:[
+      {id:'cas', qty:300},
+      {id:'spi', qty:200},
+      {id:'leu', qty:50},
+      {id:'alo', qty:60},
+      {id:'oat', qty:80},
+    ]
+  }
+];
+
+function loadExample(idx){
+  const ex=EXAMPLES[idx];
+  recipe=ex.recipe.map(e=>{
+    const ing=INGS.find(i=>i.id===e.id);
+    return ing?{ing,qty:e.qty}:null;
+  }).filter(Boolean);
+  document.getElementById('rni').value=ex.name;
+  lastResult=null;
+  document.getElementById('ast').style.display='none';
+  document.getElementById('ab').innerHTML=`<div class="aph"><div class="aphi">✦</div><div class="apht">Example loaded!<br>Press <strong>▶ Run Analysis</strong> to get<br>the AI formulation report.</div></div>`;
+  renderLib();renderCanvas();
+  toast(`Loaded: "${ex.name}"`, '🧪');
+}
+
+function goTab(n,btn){
+  document.querySelectorAll('.ttab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('v'+n).classList.add('on');
+  if(n==='A')renderAnalytics();
+  if(n==='C')renderColab();
+}
+function toast(msg,icon='✓'){
+  const el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML=`<span>${icon}</span><span>${msg}</span>`;
+  document.getElementById('tw').appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),200)},2800);
+}
+function openModal(ing){
+  const inR=recipe.find(r=>r.ing.id===ing.id);
+  document.getElementById('mb').innerHTML=`
+    <div style="font-family:var(--num);font-size:17px;font-weight:700;margin-bottom:5px">${ing.name}</div>
+    <div style="font-size:12px;color:var(--t2);line-height:1.65;margin-bottom:16px">${ing.desc}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">Protein</div><div style="font-family:var(--num);font-size:20px;font-weight:700;color:var(--green)">${ing.protein}%</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">Fiber</div><div style="font-family:var(--num);font-size:20px;font-weight:700;color:var(--blue)">${ing.fiber}%</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">Fat</div><div style="font-family:var(--num);font-size:20px;font-weight:700;color:var(--amber)">${ing.fat}%</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px"><div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">CO₂/kg</div><div style="font-family:var(--num);font-size:20px;font-weight:700;color:${CCOL[ing.cc]}">${ing.co2}</div></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">${ing.tags.map(t=>`<span class="chip ${CC[ing.cc]}">${t}</span>`).join('')}</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="bsm" onclick="closeM()">Close</button>
+      ${inR?`<button class="bsm bd2" onclick="removeIng('${ing.id}');closeM()">Remove from recipe</button>`:`<button class="bsm bp" onclick="addIng(INGS.find(x=>x.id==='${ing.id}'));closeM()">+ Add to recipe</button>`}
+    </div>`;
+  document.getElementById('ov').classList.add('open');
+}
+function closeM(){document.getElementById('ov').classList.remove('open');}
+document.getElementById('ov').onclick=e=>{if(e.target===document.getElementById('ov'))closeM();};
+
+function setCat(cat,btn){
+  activeCat=cat;
+  document.querySelectorAll('.cp').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderLib();
+}
+function renderLib(){
+  const q=document.getElementById('si2').value.toLowerCase();
+  const body=document.getElementById('libB');
+  body.innerHTML='';
+  const cats=activeCat==='all'?['protein','fiber','fat','starch','novel']:[activeCat];
+  let total=0;
+  cats.forEach(cat=>{
+    const items=INGS.filter(i=>i.cat===cat&&(!q||i.name.toLowerCase().includes(q)));
+    if(!items.length)return;
+    total+=items.length;
+    const g=document.createElement('div');
+    g.innerHTML=`<div class="iglbl">${CATLBL[cat]}</div>`;
+    items.forEach(ing=>{
+      const inR=recipe.find(r=>r.ing.id===ing.id);
+      const el=document.createElement('div');
+      el.className='ii'+(inR?' added':'');
+      el.innerHTML=`<div class="idot"></div><div class="ii-info"><div class="iin">${ing.name}</div><div class="iim">${ing.protein}% prot · ${ing.fiber}% fib · ${ing.fat}% fat</div></div><span class="chip ${CC[ing.cc]}">${ing.co2}</span><button class="iib" title="Details" onclick="event.stopPropagation();openModal(INGS.find(x=>x.id==='${ing.id}'))">ℹ</button>`;
+      el.onclick=()=>toggleIng(ing);
+      g.appendChild(el);
+    });
+    body.appendChild(g);
+  });
+  document.getElementById('libN').textContent=total;
+}
+function toggleIng(ing){recipe.find(r=>r.ing.id===ing.id)?removeIng(ing.id):addIng(ing);}
+function addIng(ing){
+  if(recipe.find(r=>r.ing.id===ing.id))return;
+  recipe.push({ing,qty:100});
+  renderLib();renderCanvas();
+  toast(`Added ${ing.name}`,'✅');
+}
+function removeIng(id){
+  const f=recipe.find(r=>r.ing.id===id);
+  recipe=recipe.filter(r=>r.ing.id!==id);
+  renderLib();renderCanvas();
+  if(f)toast(`Removed ${f.ing.name}`,'🗑');
+}
+function clearAll(){
+  if(!recipe.length){toast('Nothing to clear','⚠️');return;}
+  recipe=[];lastResult=null;
+  renderLib();renderCanvas();
+  document.getElementById('ab').innerHTML=`<div class="aph"><div class="aphi">✦</div><div class="apht">Build your formulation,<br>then press<br><strong>▶ Run Analysis</strong><br><br>You'll get:<br>• Sustainability score<br>• Functional properties<br>• Carbon breakdown<br>• Expert recommendations</div></div>`;
+  document.getElementById('ast').style.display='none';
+  toast('Formulation cleared','🗑');
+}
+function sortR(){
+  if(!recipe.length)return;
+  recipe.sort((a,b)=>b.qty-a.qty);
+  renderCanvas();
+  toast('Sorted by quantity','↕');
+}
+function stepQty(id,d){
+  const r=recipe.find(r=>r.ing.id===id);
+  if(r){r.qty=Math.max(1,Math.min(9999,r.qty+d));renderCanvas();}
+}
+function setQty(id,v){
+  const r=recipe.find(r=>r.ing.id===id);
+  if(r){r.qty=Math.max(1,Math.min(9999,parseInt(v)||1));renderCanvas();}
+}
+function getTotal(){return recipe.reduce((s,r)=>s+Number(r.qty),0);}
+function getAvgCO2(){const t=getTotal();if(!t)return 0;return recipe.reduce((s,r)=>s+(r.ing.co2*(r.qty/t)),0);}
+function renderSubs(){
+  const drawer=document.getElementById('subDrawer');
+  // find recipe ingredients that have greener subs and aren't already the best option
+  const swaps=[];
+  recipe.forEach(r=>{
+    if(!r.ing.subs||!r.ing.subs.length)return;
+    r.ing.subs.forEach(sid=>{
+      const sub=INGS.find(i=>i.id===sid);
+      if(!sub)return;
+      if(sub.co2>=r.ing.co2)return; // only suggest if genuinely lower CO2
+      if(recipe.find(x=>x.ing.id===sid))return; // already in recipe
+      swaps.push({from:r.ing,to:sub,saving:(r.ing.co2-sub.co2).toFixed(2)});
+    });
+  });
+  // dedupe by 'from' id (keep best saving)
+  const seen=new Set();
+  const deduped=swaps.filter(s=>{
+    const key=s.from.id+'-'+s.to.id;
+    if(seen.has(key))return false;seen.add(key);return true;
+  }).sort((a,b)=>parseFloat(b.saving)-parseFloat(a.saving)).slice(0,5);
+  if(!deduped.length){drawer.className='sub-drawer hidden';return;}
+  drawer.className='sub-drawer';
+  drawer.innerHTML=`
+    <div class="sub-head">
+      <span style="font-size:13px">♻</span>
+      <span class="sub-head-title">Substitution Suggestions</span>
+      <span class="sub-head-count">${deduped.length} available</span>
+      <span style="font-size:10px;color:var(--t3);margin-left:auto">Swap ingredients to reduce CO₂ footprint</span>
+    </div>
+    <div class="sub-list">
+      ${deduped.map(s=>`
+        <div class="sub-row">
+          <div class="sub-from">
+            <div class="sub-from-name">${s.from.name}</div>
+            <div class="sub-from-co2">${s.from.co2} kg CO₂e</div>
+          </div>
+          <div class="sub-arrow">→</div>
+          <div class="sub-to">
+            <div class="sub-to-name">${s.to.name}</div>
+            <div class="sub-to-co2">${s.to.co2} kg CO₂e · saves ${s.saving}</div>
+          </div>
+          <button class="sub-swap-btn" onclick="doSwap('${s.from.id}','${s.to.id}')">Swap →</button>
+        </div>`).join('')}
+    </div>`;
+}
+function doSwap(fromId,toId){
+  const idx=recipe.findIndex(r=>r.ing.id===fromId);
+  const newIng=INGS.find(i=>i.id===toId);
+  if(idx<0||!newIng)return;
+  const qty=recipe[idx].qty;
+  recipe[idx]={ing:newIng,qty};
+  renderLib();renderCanvas();
+  toast(`Swapped to ${newIng.name} · −${(INGS.find(i=>i.id===fromId)?.co2||0)-newIng.co2>=0?(INGS.find(i=>i.id===fromId).co2-newIng.co2).toFixed(2):0} CO₂e`,'♻');
+}
+function renderCanvas(){
+  const body=document.getElementById('cbody');
+  const t=getTotal(),co2=getAvgCO2();
+  document.getElementById('cmt').textContent=`${recipe.length} ingredient${recipe.length!==1?'s':''}`;
+  document.getElementById('fC').textContent=recipe.length;
+  document.getElementById('fT').textContent=t?t+' g':'0 g';
+  document.getElementById('fT').className='fv'+(t>0?' ok':'');
+  document.getElementById('fO').textContent=recipe.length?co2.toFixed(2)+' kg':'—';
+  document.getElementById('fO').className='fv'+(co2<0.8?' ok':co2<1.3?' wn':' bd');
+  document.getElementById('fh').textContent=recipe.length?(t>0?`${recipe.length} ingredients · ${t}g total`:'Set quantities above'):'Add ingredients to begin →';
+  if(!recipe.length){
+    body.innerHTML='';
+    const es=document.createElement('div');
+    es.id='esEl';es.className='es';
+    es.style.cssText='justify-content:flex-start;padding:28px 20px;overflow-y:auto;align-items:center';
+    es.innerHTML=`
+      <div class="ei" style="margin-bottom:12px">🧪</div>
+      <div class="et">Start your formulation</div>
+      <div class="eh" style="margin-bottom:0">Click any ingredient on the left to add it. Adjust grams with − / + buttons, then press <strong>Run Analysis</strong>.</div>
+      <div class="es-or">or start from an example</div>
+      <div class="ex-grid">
+        ${EXAMPLES.map((ex,i)=>`
+          <div class="ex-card" onclick="loadExample(${i})">
+            <div class="ex-card-top">
+              <div class="ex-icon" style="background:var(--gd);border:1px solid var(--gm)">${ex.icon}</div>
+              <span class="ex-score chip" style="background:${ex.score>=75?'var(--gd)':ex.score>=55?'var(--ad)':'var(--rd)'};color:${ex.scoreColor};border:1px solid ${ex.scoreColor}40">~${ex.score}</span>
+            </div>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-desc">${ex.desc}</div>
+            <div class="ex-tags">${ex.tags.map(t=>`<span class="ex-tag">${t}</span>`).join('')}</div>
+            <div class="ex-footer">
+              <span class="ex-ing-count">${ex.recipe.length} ingredients · CO₂ ${ex.co2}</span>
+              <span class="ex-load">Load →</span>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    body.appendChild(es);
+    document.getElementById('subDrawer').className='sub-drawer hidden';
+    return;
+  }
+  document.getElementById('cbody').querySelector('#esEl')?.remove();
+  body.innerHTML=`<div class="lhdr"><div>Ingredient</div><div>Quantity (g)</div><div>Share</div><div></div></div>`;
+  recipe.forEach(r=>{
+    const pct=t>0?Math.round((r.qty/t)*100):0;
+    const el=document.createElement('div');
+    el.className='rrow';
+    el.innerHTML=`<div><div class="rn">${r.ing.name}</div><div class="rm">${r.ing.protein}% prot · <span class="chip ${CC[r.ing.cc]}" style="font-size:9px">${r.ing.co2} CO₂e</span></div></div><div class="qc"><button class="qb" onclick="stepQty('${r.ing.id}',-10)">−</button><input class="qi" type="number" min="1" max="9999" value="${r.qty}" onchange="setQty('${r.ing.id}',this.value)" oninput="setQty('${r.ing.id}',this.value)"><button class="qb" onclick="stepQty('${r.ing.id}',10)">+</button></div><div class="pc"><div class="pb"><div class="pbf" style="width:${pct}%"></div></div><div class="pn">${pct}%</div></div><button class="db" onclick="removeIng('${r.ing.id}')" title="Remove">×</button>`;
+    body.appendChild(el);
+  });
+  renderSubs();
+}
+async function runAI(){
+  if(!recipe.length){toast('Add at least one ingredient first','⚠️');return;}
+  const btn=document.getElementById('rb');
+  const lbl=document.getElementById('rl');
+  btn.disabled=true;
+  lbl.innerHTML=`<div class="sp"></div> Analysing…`;
+  document.getElementById('ast').style.display='none';
+
+  document.getElementById('ab').innerHTML=`<div class="asec"><div class="ast">Running Analysis</div><div class="ls">
+    <div class="lstep cur" id="ls0"><div class="lstep-ic">1</div>Ingesting formulation data</div>
+    <div class="lstep" id="ls1"><div class="lstep-ic">2</div>Running carbon footprint model</div>
+    <div class="lstep" id="ls2"><div class="lstep-ic">3</div>Predicting functional outcomes</div>
+    <div class="lstep" id="ls3"><div class="lstep-ic">4</div>Generating recommendations</div>
+  </div></div>`;
+
+  // animate steps
+  const timers=[0,600,1200,1800].map((d,i)=>setTimeout(()=>{
+    const prev=document.getElementById(`ls${i-1}`);
+    if(prev){prev.classList.remove('cur');prev.classList.add('done');const ic=prev.querySelector('.lstep-ic');if(ic)ic.textContent='✓';}
+    const cur=document.getElementById(`ls${i}`);
+    if(cur)cur.classList.add('cur');
+  },d));
+
+  await new Promise(r=>setTimeout(r,2600)); // let animation play
+  timers.forEach(clearTimeout);
+  for(let i=0;i<4;i++){const el=document.getElementById(`ls${i}`);if(el){el.classList.remove('cur');el.classList.add('done');const ic=el.querySelector('.lstep-ic');if(ic)ic.textContent='✓';}}
+  await new Promise(r=>setTimeout(r,300));
+
+  const t=getTotal();
+  // ── weighted averages ──
+  const wAvg=(key)=>recipe.reduce((s,r)=>s+(r.ing[key]*(r.qty/t)),0);
+  const avgProtein=wAvg('protein');
+  const avgFiber=wAvg('fiber');
+  const avgFat=wAvg('fat');
+  const totalCO2=wAvg('co2');
+  const novelCount=recipe.filter(r=>r.ing.cat==='novel').length;
+  const highCO2Count=recipe.filter(r=>r.ing.co2>=1.3).length;
+
+  // ── Sustainability Score ──
+  let score=100;
+  score-=Math.max(0,(totalCO2-0.5)*22);          // penalise high CO2
+  score-=highCO2Count*8;                           // each high-CO2 ingredient
+  score+=Math.min(10,avgFiber*0.12);               // fiber is good
+  score+=Math.min(8,(avgProtein-40)*0.1);          // protein bonus
+  score-=Math.max(0,(avgFat-30)*0.2);              // excessive fat penalty
+  if(novelCount>=2) score-=5;                       // novel complexity
+  const sustainabilityScore=Math.round(Math.min(97,Math.max(20,score)));
+
+  // ── Functional properties ──
+  // Texture: driven by fiber+protein content
+  const textureRaw=Math.min(100,avgFiber*0.6+avgProtein*0.35+10);
+  // Stability: high protein = good, high fat = slightly less
+  const stabilityRaw=Math.min(100,avgProtein*0.55+avgFiber*0.3+20-avgFat*0.1);
+  // Solubility: high protein isolates = good, fibers = reduces it
+  const solubilityRaw=Math.min(100,avgProtein*0.6-avgFiber*0.2+30);
+  // Binding: fiber + protein synergy
+  const bindingRaw=Math.min(100,avgFiber*0.55+avgProtein*0.3+15);
+
+  const scoreLabel=(v)=>v>=75?'Very High':v>=55?'High':v>=35?'Medium':'Low';
+  const texture={score:Math.round(textureRaw),label:scoreLabel(textureRaw)};
+  const stability={score:Math.round(stabilityRaw),label:scoreLabel(stabilityRaw)};
+  const solubility={score:Math.round(Math.max(10,solubilityRaw)),label:scoreLabel(Math.max(10,solubilityRaw))};
+  const bindingStrength={score:Math.round(bindingRaw),label:scoreLabel(bindingRaw)};
+
+  // ── CO2 Breakdown (proportional contribution) ──
+  const totalWeightedCO2=recipe.reduce((s,r)=>s+(r.ing.co2*r.qty),0);
+  const co2Breakdown=recipe.map(r=>({
+    name:r.ing.name.length>18?r.ing.name.slice(0,16)+'…':r.ing.name,
+    contribution:Math.round((r.ing.co2*r.qty/totalWeightedCO2)*100)
+  })).sort((a,b)=>b.contribution-a.contribution);
+  // normalise to 100
+  const bdSum=co2Breakdown.reduce((s,c)=>s+c.contribution,0);
+  if(bdSum!==100&&co2Breakdown.length) co2Breakdown[0].contribution+=100-bdSum;
+
+  // ── Recommendations ──
+  const recs=[];
+  const highCO2ings=recipe.filter(r=>r.ing.co2>=1.3).sort((a,b)=>b.ing.co2-a.ing.co2);
+  if(highCO2ings.length){
+    const worst=highCO2ings[0];
+    const alt=INGS.find(i=>i.cat===worst.ing.cat&&i.co2<worst.ing.co2&&!recipe.find(r=>r.ing.id===i.id));
+    recs.push({type:'warning',text:`${worst.ing.name} (${worst.ing.co2} kg CO₂e/kg) is your highest-emission ingredient — ${alt?`consider substituting with ${alt.name} (${alt.co2} kg CO₂e/kg) for a ${(worst.ing.co2-alt.co2).toFixed(1)} reduction`:'explore lower-carbon alternatives in the same category'}.`});
+  }
+  if(avgFiber<10){
+    const bestFiber=INGS.filter(i=>i.cat==='fiber'&&!recipe.find(r=>r.ing.id===i.id)).sort((a,b)=>a.co2-b.co2)[0];
+    recs.push({type:'improve',text:`Dietary fiber content is low at ${avgFiber.toFixed(1)}%. Adding ${bestFiber?bestFiber.name+' (CO₂: '+bestFiber.co2+'kg/kg)':'a fiber ingredient'} would improve binding, texture and nutritional profile.`});
+  }
+  if(avgProtein>=60){
+    recs.push({type:'insight',text:`Strong protein profile at ${avgProtein.toFixed(1)}% weighted average. Ensure amino acid complementation — ${recipe.some(r=>r.ing.id==='pea'||r.ing.id==='ric')?'pea+rice pairing detected, good complete profile':'consider pairing pea and rice protein for a complete amino acid spectrum'}.`});
+  } else {
+    recs.push({type:'improve',text:`Protein content (${avgProtein.toFixed(1)}% avg) could be increased. Consider adding Pea Protein Concentrate or Algae Protein — both offer low CO₂ profiles under 0.7 kg CO₂e/kg.`});
+  }
+  if(totalCO2<0.8){
+    recs.push({type:'insight',text:`Excellent overall carbon footprint at ${totalCO2.toFixed(2)} kg CO₂e/kg. This formulation is well-positioned for low-carbon product claims and sustainability reporting.`});
+  } else if(totalCO2<1.3){
+    recs.push({type:'improve',text:`Moderate carbon footprint (${totalCO2.toFixed(2)} kg CO₂e/kg). Swapping 1–2 amber-rated ingredients for green-rated alternatives could bring this under the 0.8 kg target.`});
+  }
+  if(novelCount>=2){
+    recs.push({type:'warning',text:`${novelCount} novel ingredients detected. Expect extended R&D validation cycles and potential regulatory review — budget additional 4–8 weeks per novel ingredient for safety substantiation.`});
+  }
+  if(avgFat>35){
+    recs.push({type:'improve',text:`Fat content is elevated at ${avgFat.toFixed(1)}%. Consider reducing ${recipe.filter(r=>r.ing.fat>50).map(r=>r.ing.name).join(', ')||'lipid-heavy ingredients'} for a leaner nutritional profile.`});
+  }
+  const finalRecs=recs.slice(0,3).length<3?[...recs,...[{type:'insight',text:`Formulation contains ${recipe.length} ingredient${recipe.length!==1?'s':''} at ${t}g total. Run a pilot scale trial to validate functional outcomes at manufacturing conditions.`}]].slice(0,3):recs.slice(0,3);
+
+  // ── Score rationale ──
+  const grade=sustainabilityScore>=75?'excellent':sustainabilityScore>=60?'good':sustainabilityScore>=45?'moderate':'below target';
+  const scoreRationale=`Sustainability score is ${grade} at ${sustainabilityScore}/100 — primarily driven by a weighted CO₂ average of ${totalCO2.toFixed(2)} kg CO₂e/kg across ${recipe.length} ingredients with ${highCO2Count>0?highCO2Count+' high-emission ingredient'+(highCO2Count!==1?'s':''):'no high-emission ingredients'} detected.`;
+
+  // ── Overall verdict ──
+  const overallVerdict=`This ${document.getElementById('rni').value||'formulation'} achieves a ${grade} sustainability profile with ${avgProtein.toFixed(1)}% weighted protein, ${avgFiber.toFixed(1)}% fiber, and a carbon footprint of ${totalCO2.toFixed(2)} kg CO₂e/kg. ${sustainabilityScore>=70?'The formulation is well-suited for sustainable product development and low-carbon positioning in the market.':'Targeted ingredient substitutions — particularly replacing high-CO₂ inputs — could meaningfully improve the sustainability score and reduce emissions at scale.'} ${novelCount>0?`Note that ${novelCount} novel ingredient${novelCount!==1?'s require':' requires'} additional regulatory validation before commercialisation.`:'All ingredients are commercially established with no novel regulatory constraints.'}`;
+
+  lastResult={sustainabilityScore,scoreRationale,texture,stability,solubility,bindingStrength,totalCO2:parseFloat(totalCO2.toFixed(2)),co2Breakdown,recommendations:finalRecs,overallVerdict};
+  lastResult._name=document.getElementById('rni').value;
+
+  showResults(lastResult);
+  renderAnalytics();
+  const s=document.getElementById('ast');s.style.display='inline-block';s.textContent='Done';s.className='chip cg';
+  btn.disabled=false;
+  lbl.innerHTML='▶ Run Analysis';
+  toast('Analysis complete ✓','✅');
+}
+function pc(s){return s>=70?'var(--green)':s>=45?'var(--amber)':'var(--red)';}
+function buildPie(segments,cx,cy,r){
+  // segments: [{pct, color, label}]
+  const total=segments.reduce((s,x)=>s+x.pct,0)||1;
+  const c=2*Math.PI*r;
+  let offset=0;
+  const paths=segments.map((seg,i)=>{
+    const frac=seg.pct/total;
+    const dash=frac*c;
+    const gap=c-dash;
+    // rotate so first segment starts at top
+    const rotate=-90+(offset/total)*360;
+    offset+=seg.pct;
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+      stroke="${seg.color}" stroke-width="28"
+      stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+      stroke-dashoffset="${-(offset-seg.pct)/total*c+c/4}"
+      transform="rotate(-90 ${cx} ${cy})"
+      style="transition:stroke-dasharray .8s cubic-bezier(.16,1,.3,1)"
+    >
+      <title>${seg.label}: ${seg.pct}%</title>
+    </circle>`;
+  }).join('');
+  return paths;
+}
+function showResults(r){
+  const sc=r.sustainabilityScore;
+  const scol=sc>=75?'var(--green)':sc>=50?'var(--amber)':'var(--red)';
+  const sgrd=sc>=75?'Excellent':sc>=60?'Good':sc>=45?'Moderate':'Needs Work';
+  const ti={improve:'✦',warning:'⚠',insight:'💡'};
+  const tc={improve:'',warning:'warn',insight:'ins'};
+
+  // palette for pie slices
+  const PIE_COLORS=['#00956b','#1a6fb5','#c47d00','#9333ea','#c0392b','#0891b2','#65a30d','#d97706'];
+  const bd=r.co2Breakdown||[];
+  const pieSegs=bd.map((c,i)=>({pct:c.contribution,color:PIE_COLORS[i%PIE_COLORS.length],label:c.name}));
+  const pieSvg=`<svg width="120" height="120" viewBox="0 0 120 120" style="flex-shrink:0">${buildPie(pieSegs,60,60,32)}<circle cx="60" cy="60" r="18" fill="white"/><text x="60" y="57" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#666" dy="0">CO₂</text><text x="60" y="68" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#999">split</text></svg>`;
+  const legend=pieSegs.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border)">
+      <div style="width:9px;height:9px;border-radius:2px;background:${s.color};flex-shrink:0"></div>
+      <div style="font-size:11px;color:var(--t2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${bd[i].name}">${bd[i].name}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--t3);font-weight:500">${bd[i].contribution}%</div>
+    </div>`).join('');
+
+  document.getElementById('ab').innerHTML=`
+    <div class="asec"><div class="ast">Sustainability Score</div><div class="sr"><div class="sn" style="color:${scol}">${sc}</div><div><div class="sg" style="color:${scol}">${sgrd}</div><div class="ss">out of 100</div></div></div><div class="srat">${r.scoreRationale}</div></div>
+    <div class="asec"><div class="ast">Functional Properties</div><div class="pg">${['texture','stability','solubility','bindingStrength'].map(k=>`<div class="pcard"><div class="plbl">${k.replace(/([A-Z])/,' $1').trim()}</div><div class="pval" style="color:${pc(r[k].score)}">${r[k].label}</div><div class="pbar"><div class="pbf2" style="width:${r[k].score}%;background:${pc(r[k].score)}"></div></div></div>`).join('')}</div></div>
+    <div class="asec">
+      <div class="ast">CO₂ Footprint</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+        <div class="cb" style="margin-bottom:0">${r.totalCO2.toFixed(2)}<span> kg CO₂e/kg</span></div>
+        <span class="chip ${r.totalCO2<0.8?'cg':r.totalCO2<1.3?'ca':'cr'}" style="margin-left:4px">${r.totalCO2<0.8?'Low':r.totalCO2<1.3?'Medium':'High'}</span>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;gap:16px;align-items:flex-start">
+        ${pieSvg}
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0">
+          ${legend}
+        </div>
+      </div>
+    </div>
+    <div class="asec"><div class="ast">Recommendations</div><div class="rlist">${r.recommendations.map(rec=>`<div class="rec ${tc[rec.type]||''}">${ti[rec.type]||'✦'} ${rec.text}</div>`).join('')}</div></div>
+    <div class="asec"><div class="ast">Expert Verdict</div><div class="verd">${r.overallVerdict}</div></div>`;
+}
+function saveF(){
+  if(!recipe.length){toast('Nothing to save yet','⚠️');return;}
+  const name=document.getElementById('rni').value||'Untitled';
+  saved.push({id:Date.now(),name,recipe:JSON.parse(JSON.stringify(recipe)),result:lastResult?JSON.parse(JSON.stringify(lastResult)):null,date:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),total:getTotal(),co2:getAvgCO2().toFixed(2)});
+  toast(`"${name}" saved 💾`,'💾');
+  renderColab();
+}
+function renderAnalytics(){
+  const grid=document.getElementById('ag');
+  if(!recipe.length){grid.innerHTML=`<div class="ac w3"><div class="aph" style="height:auto;padding:40px 0"><div class="aphi">📊</div><div class="apht" style="font-size:13px">Add ingredients in <strong>Formulation</strong> to see live charts here.</div></div></div>`;return;}
+  const t=getTotal();
+  const avgP=recipe.reduce((s,r)=>s+(r.ing.protein*(r.qty/t)),0).toFixed(1);
+  const avgF=recipe.reduce((s,r)=>s+(r.ing.fiber*(r.qty/t)),0).toFixed(1);
+  const avgFt=recipe.reduce((s,r)=>s+(r.ing.fat*(r.qty/t)),0).toFixed(1);
+  const co2s=[...recipe].sort((a,b)=>b.ing.co2-a.ing.co2);
+  const qts=[...recipe].sort((a,b)=>b.qty-a.qty);
+
+  // ── COST ESTIMATION ──
+  const totalCostBatch=recipe.reduce((s,r)=>s+(r.ing.cost*(r.qty/1000)),0); // batch cost in $
+  const costPer100g=(totalCostBatch/t)*100;
+  const pilotCost=totalCostBatch*(10000/t); // 10kg pilot
+  const tonCost=totalCostBatch*(1000000/t); // 1 tonne
+  const costRows=qts.map(r=>`<tr>
+    <td style="padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);color:var(--t2)">${r.ing.name}</td>
+    <td style="padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-family:var(--mono);font-size:10px;color:var(--t3)">${r.qty}g</td>
+    <td style="padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-family:var(--mono);text-align:right;color:var(--t)">$${(r.ing.cost*(r.qty/1000)).toFixed(2)}</td>
+  </tr>`).join('');
+
+  // ── R&D CYCLE TIME ──
+  const baseWeeks=4; // baseline concept + setup
+  const ingredientWeeks=recipe.reduce((s,r)=>s+r.ing.rdWeeks,0);
+  const novelCount=recipe.filter(r=>r.ing.cat==='novel').length;
+  const co2Flag=recipe.some(r=>r.ing.co2>=1.3)?2:0;
+  const totalWeeks=baseWeeks+ingredientWeeks+co2Flag;
+  const phases=[
+    {name:'Concept & Design',weeks:2,color:'#00956b',pct:100},
+    {name:'Lab Trials',weeks:Math.max(2,Math.round(totalWeeks*0.3)),color:'#1a6fb5',pct:Math.min(100,Math.round(totalWeeks*0.3/totalWeeks*100)*3)},
+    {name:'Formulation Iterations',weeks:Math.max(3,Math.round(totalWeeks*0.45)),color:'#c47d00',pct:Math.min(100,Math.round(totalWeeks*0.45/totalWeeks*100)*2.2)},
+    {name:'Validation & QC',weeks:Math.max(2,Math.round(totalWeeks*0.2)),color:'#9333ea',pct:Math.min(100,Math.round(totalWeeks*0.2/totalWeeks*100)*5)},
+    {name:'Pilot Scale-Up',weeks:Math.max(2,Math.round(totalWeeks*0.15)),color:'#0891b2',pct:Math.min(100,Math.round(totalWeeks*0.15/totalWeeks*100)*6)},
+  ];
+  const maxPhaseW=Math.max(...phases.map(p=>p.weeks));
+  const phaseRows=phases.map(p=>`
+    <div class="rd-phase">
+      <div class="rd-phase-label">${p.name}</div>
+      <div class="rd-phase-line"><div class="rd-phase-fill" style="width:${Math.round((p.weeks/maxPhaseW)*100)}%;background:${p.color}"></div></div>
+      <div class="rd-phase-weeks">${p.weeks}w</div>
+    </div>`).join('');
+
+  grid.innerHTML=`
+    <div class="ac"><div class="act">Avg Protein</div><div style="font-family:var(--num);font-size:40px;font-weight:700;color:var(--green);line-height:1">${avgP}%</div><div style="font-size:11px;color:var(--t3);margin-top:5px">weighted avg</div></div>
+    <div class="ac"><div class="act">Avg Fiber</div><div style="font-family:var(--num);font-size:40px;font-weight:700;color:var(--blue);line-height:1">${avgF}%</div><div style="font-size:11px;color:var(--t3);margin-top:5px">dietary fiber</div></div>
+    <div class="ac"><div class="act">Avg Fat</div><div style="font-family:var(--num);font-size:40px;font-weight:700;color:var(--amber);line-height:1">${avgFt}%</div><div style="font-size:11px;color:var(--t3);margin-top:5px">total fat</div></div>
+
+    <div class="ac w2">
+      <div class="act">R&amp;D Cycle Time Estimate</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+        <div style="font-family:var(--num);font-size:36px;font-weight:700;color:var(--t);line-height:1;letter-spacing:0.02em">${totalWeeks}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--t3)">weeks estimated · ${novelCount} novel ingredient${novelCount!==1?'s':''} · ${recipe.filter(r=>r.ing.rdWeeks>0).length} complex</div>
+      </div>
+      <div class="rd-phases">${phaseRows}</div>
+      <div style="margin-top:12px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--t3);line-height:1.6">
+        ${co2Flag?'<span style="color:var(--amber)">⚠ High CO₂ ingredients detected — additional reformulation cycles expected.</span><br>':''
+        }${novelCount>=2?'<span style="color:var(--blue)">ℹ Multiple novel ingredients extend validation requirements.</span>':'Formulation complexity is manageable. Standard R&D timeline applies.'}
+      </div>
+    </div>
+    <div class="ac">
+      <div class="act">Macro Composition</div>
+      <div class="dw">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="32" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="14"/>
+          ${buildDonut(44,44,32,14,[{p:parseFloat(avgP),c:'#00956b'},{p:parseFloat(avgF),c:'#1a6fb5'},{p:parseFloat(avgFt),c:'#c47d00'}])}
+        </svg>
+        <div class="dl">
+          <div class="dlr"><div class="dld" style="background:var(--green)"></div><div class="dll">Protein</div><div class="dlp">${avgP}%</div></div>
+          <div class="dlr"><div class="dld" style="background:var(--blue)"></div><div class="dll">Fiber</div><div class="dlp">${avgF}%</div></div>
+          <div class="dlr"><div class="dld" style="background:var(--amber)"></div><div class="dll">Fat</div><div class="dlp">${avgFt}%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ac w2">
+      <div class="act">R&amp;D Cost Estimation · Batch ${t}g</div>
+      <div style="display:flex;gap:24px;margin-bottom:14px">
+        <div><div class="cost-highlight">$${totalCostBatch.toFixed(2)}</div><div class="cost-sub">THIS BATCH (${t}g)</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div><div class="cost-highlight" style="font-size:20px">$${costPer100g.toFixed(2)}</div><div class="cost-sub">PER 100g</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div><div class="cost-highlight" style="font-size:20px">$${pilotCost.toFixed(0)}</div><div class="cost-sub">10kg PILOT</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div><div class="cost-highlight" style="font-size:20px">$${(tonCost/1000).toFixed(1)}k</div><div class="cost-sub">1 TONNE SCALE</div></div>
+      </div>
+      <table class="cost-table">
+        <tbody>${costRows}</tbody>
+        <tfoot><tr><td style="padding-top:8px;font-weight:600;color:var(--t)">Total</td><td style="padding-top:8px;font-family:var(--mono);font-size:10px;color:var(--t3)">${t}g</td><td style="padding-top:8px;font-family:var(--mono);text-align:right;font-weight:700;color:var(--t)">$${totalCostBatch.toFixed(2)}</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="ac"><div class="act">CO₂ Score by Ingredient</div><div class="bc">${co2s.map(r=>`<div class="bcr"><div class="bcrl" title="${r.ing.name}">${r.ing.name}</div><div class="bcrt"><div class="bcrf" style="width:${(r.ing.co2/2.5)*100}%;background:${r.ing.co2<0.8?'var(--green)':r.ing.co2<1.3?'var(--amber)':'var(--red)'}"></div></div><div class="bcrv">${r.ing.co2}</div></div>`).join('')}</div></div>
+
+    ${lastResult?`
+    <div class="ac"><div class="act">Sustainability Score</div><div style="font-family:var(--num);font-size:58px;font-weight:700;line-height:1;color:${lastResult.sustainabilityScore>=75?'var(--green)':lastResult.sustainabilityScore>=50?'var(--amber)':'var(--red)'}">${lastResult.sustainabilityScore}</div><div style="font-size:11px;color:var(--t3);margin-top:6px;line-height:1.6">${lastResult.scoreRationale}</div></div>
+    <div class="ac w2"><div class="act">Functional Properties (Last Analysis)</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${['texture','stability','solubility','bindingStrength'].map(k=>`<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px"><div style="font-family:var(--mono);font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px">${k.replace(/([A-Z])/,' $1').trim()}</div><div style="font-family:var(--num);font-size:16px;font-weight:700;color:${pc(lastResult[k].score)}">${lastResult[k].label}</div><div style="height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden"><div style="width:${lastResult[k].score}%;height:100%;background:${pc(lastResult[k].score)};border-radius:2px"></div></div></div>`).join('')}</div></div>`:''}`;
+}
+function buildDonut(cx,cy,r,sw,segs){
+  const tot=segs.reduce((s,x)=>s+x.p,0)||100;const c=2*Math.PI*r;let off=0;
+  return segs.map(s=>{const d=(s.p/tot)*c;const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.c}" stroke-width="${sw}" stroke-dasharray="${d} ${c-d}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"/>`;off+=d;return el;}).join('');
+}
+function renderColab(){
+  document.getElementById('cn').textContent=`${saved.length} saved`;
+  const body=document.getElementById('cb2');
+  if(!saved.length){body.innerHTML=`<div class="aph" style="height:100%"><div class="aphi">📂</div><div class="apht">No saved formulations yet.<br>Build a recipe and press <strong>💾 Save</strong>.</div></div>`;return;}
+  body.innerHTML='<div class="slist"></div>';
+  const list=body.querySelector('.slist');
+  saved.slice().reverse().forEach(f=>{
+    const sc=f.result?.sustainabilityScore;
+    const scol=sc!=null?(sc>=75?'var(--green)':sc>=50?'var(--amber)':'var(--red)'):'var(--t3)';
+    const card=document.createElement('div');
+    card.className='sc';
+    card.innerHTML=`<div class="sci">🧪</div><div><div class="scn">${f.name}</div><div class="scm">${f.recipe.length} ingredients · ${f.total}g · CO₂ ${f.co2} · ${f.date}</div></div><div class="scr">${sc!=null?`<div class="sbg" style="color:${scol};border-color:${scol}30">${sc}</div>`:''}<button class="bsm" onclick="loadF(${f.id})">Load</button><button class="bsm bd2" onclick="deleteF(${f.id})">Delete</button></div>`;
+    list.appendChild(card);
+  });
+  const lf=saved[saved.length-1];
+  const item=document.createElement('div');
+  item.className='fact';item.style.animation='ri .2s ease';
+  item.innerHTML=`<div class="fav" style="background:#6366f1;color:#fff">TW</div><div><div class="ftxt">"<strong>${lf.name}</strong>" saved (${lf.recipe.length} ingredients, ${lf.total}g).</div><div class="ftime">Just now</div></div>`;
+  document.getElementById('fd').insertBefore(item,document.getElementById('fd').firstChild);
+}
+function loadF(id){
+  const f=saved.find(x=>x.id===id);if(!f)return;
+  recipe=JSON.parse(JSON.stringify(f.recipe));
+  document.getElementById('rni').value=f.name;
+  lastResult=f.result;
+  renderLib();renderCanvas();
+  if(f.result)showResults(f.result);
+  document.querySelectorAll('.ttab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ttab')[0].classList.add('on');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('vF').classList.add('on');
+  toast(`"${f.name}" loaded into workspace`,'📂');
+}
+function deleteF(id){
+  const f=saved.find(x=>x.id===id);
+  saved=saved.filter(x=>x.id!==id);
+  renderColab();
+  if(f)toast(`"${f.name}" deleted`,'🗑');
+}
+renderLib();renderCanvas();
+</script>
+</body>
+</html>
